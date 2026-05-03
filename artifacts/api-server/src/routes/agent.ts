@@ -6,17 +6,50 @@ import { computeTechnicals } from "./analysis";
 
 const router: IRouter = Router();
 
+const STYLE_PROMPT: Record<string, string> = {
+  conservative:
+    "Prefer high-confidence, well-confirmed signals only. Use tight stop-losses and conservative targets. Require multiple indicator alignment before generating a signal. If confidence is below 65%, do not include the signal.",
+  moderate:
+    "Balance risk and reward. Include signals that have moderate confirmation. Standard stop-loss and target levels. Include signals with confidence above 50%.",
+  aggressive:
+    "Include all noteworthy signals even if early or less confirmed. Wider targets, higher risk tolerance. Active traders want more signals. Include signals with confidence above 35%.",
+};
+
 router.post("/openai/agent/analyze", async (req, res) => {
   try {
-    const { symbol, instrumentType = "STOCK", timeframe = "INTRADAY" } =
-      req.body as { symbol: string; instrumentType?: string; timeframe?: string };
+    const {
+      symbol,
+      instrumentType = "STOCK",
+      timeframe = "INTRADAY",
+      numSignals = 2,
+      maxTokens = 2048,
+      style = "moderate",
+      customContext = "",
+      confidenceThreshold = 0,
+      saveSignals: doSaveSignals = true,
+    } = req.body as {
+      symbol: string;
+      instrumentType?: string;
+      timeframe?: string;
+      numSignals?: number;
+      maxTokens?: number;
+      style?: string;
+      customContext?: string;
+      confidenceThreshold?: number;
+      saveSignals?: boolean;
+    };
 
     if (!symbol) {
       res.status(400).json({ error: "symbol is required" });
       return;
     }
 
-    // Get technical analysis first
+    const clampedNumSignals = Math.min(5, Math.max(1, Number(numSignals) || 2));
+    const clampedTokens = Math.min(4096, Math.max(512, Number(maxTokens) || 2048));
+    const clampedThreshold = Math.min(90, Math.max(0, Number(confidenceThreshold) || 0));
+    const styleKey = ["conservative", "moderate", "aggressive"].includes(style) ? style : "moderate";
+
+    // Get technical analysis
     let techData: any = null;
     try {
       techData = await computeTechnicals(symbol.toUpperCase());
@@ -25,8 +58,7 @@ router.post("/openai/agent/analyze", async (req, res) => {
     }
 
     const techContext = techData
-      ? `
-Technical Indicators for ${symbol}:
+      ? `Technical Indicators for ${symbol}:
 - RSI (14): ${techData.rsi ?? "N/A"}
 - MACD: ${techData.macd ? `${techData.macd.macd.toFixed(2)} | Signal: ${techData.macd.signal.toFixed(2)} | Histogram: ${techData.macd.histogram.toFixed(2)}` : "N/A"}
 - Bollinger Bands: ${techData.bollingerBands ? `Upper: ${techData.bollingerBands.upper} | Middle: ${techData.bollingerBands.middle} | Lower: ${techData.bollingerBands.lower}` : "N/A"}
@@ -38,15 +70,23 @@ Technical Indicators for ${symbol}:
 - Overall Signal: ${techData.overallSignal} (Strength: ${techData.signalStrength}%)`
       : `No technical data available for ${symbol}.`;
 
-    const systemPrompt = `You are an elite Indian stock market analyst with deep expertise in NSE/BSE trading, 
-technical analysis, and derivatives (options and futures). You analyze stocks, index options (NIFTY/BANKNIFTY), 
-and futures. You provide precise, actionable signals with clear entry, target, and stop-loss levels.
+    const styleInstruction = STYLE_PROMPT[styleKey];
+
+    const systemPrompt = `You are an elite Indian stock market analyst with deep expertise in NSE/BSE trading, technical analysis, and derivatives (options and futures). You analyze stocks, index options (NIFTY/BANKNIFTY), and futures. You provide precise, actionable signals with clear entry, target, and stop-loss levels.
+
+Trading Style: ${styleKey.toUpperCase()} — ${styleInstruction}
 
 IMPORTANT: Respond ONLY with valid JSON. No markdown fences, no explanations outside JSON.`;
 
+    const customSection = customContext?.trim()
+      ? `\n\nAdditional context from the user:\n${customContext.trim()}`
+      : "";
+
     const userPrompt = `Perform a comprehensive technical analysis for ${symbol} (${instrumentType}) with ${timeframe} timeframe.
 
-${techContext}
+${techContext}${customSection}
+
+Generate exactly ${clampedNumSignals} signal(s) that reflect a ${styleKey} trading approach.
 
 Respond with this exact JSON structure:
 {
@@ -70,11 +110,11 @@ Respond with this exact JSON structure:
   "riskAssessment": "1-2 sentences on risk assessment and position sizing advice"
 }
 
-Provide 1-3 specific, actionable signals. If ${instrumentType} is OPTIONS, suggest specific strike prices and expiries.`;
+If ${instrumentType} is OPTIONS, suggest specific strike prices and expiries. Only include signals with confidence >= ${clampedThreshold}.`;
 
     const response = await nvidia.chat.completions.create({
       model: NVIDIA_MODEL,
-      max_tokens: 2048,
+      max_tokens: clampedTokens,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -92,57 +132,63 @@ Provide 1-3 specific, actionable signals. If ${instrumentType} is OPTIONS, sugge
       return;
     }
 
-    // Save generated signals to DB
+    // Filter by confidence threshold
+    const rawSignals: any[] = analysisResult.signals ?? [];
+    const filteredSignals = rawSignals.filter(
+      (s) => (s.confidence ?? 0) >= clampedThreshold
+    );
+
+    // Save to DB if enabled
     const savedSignals = [];
-    const now = new Date();
-    const istOffsetMs = 5.5 * 60 * 60 * 1000;
-    const nowIST = new Date(now.getTime() + istOffsetMs);
-    let expiresAt: Date;
-    if (timeframe === "INTRADAY") {
-      // Market closes at 15:30 IST = 10:00 UTC
-      expiresAt = new Date(Date.UTC(
-        nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate(),
-        10, 0, 0, 0
-      ));
-      if (expiresAt <= now) {
-        expiresAt = new Date(expiresAt.getTime() + 24 * 60 * 60 * 1000);
-        const day = expiresAt.getUTCDay();
-        if (day === 6) expiresAt = new Date(expiresAt.getTime() + 2 * 24 * 60 * 60 * 1000);
-        else if (day === 0) expiresAt = new Date(expiresAt.getTime() + 1 * 24 * 60 * 60 * 1000);
+    if (doSaveSignals) {
+      const now = new Date();
+      const istOffsetMs = 5.5 * 60 * 60 * 1000;
+      const nowIST = new Date(now.getTime() + istOffsetMs);
+      let expiresAt: Date;
+      if (timeframe === "INTRADAY") {
+        expiresAt = new Date(Date.UTC(
+          nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate(), 10, 0, 0, 0
+        ));
+        if (expiresAt <= now) {
+          expiresAt = new Date(expiresAt.getTime() + 24 * 60 * 60 * 1000);
+          const day = expiresAt.getUTCDay();
+          if (day === 6) expiresAt = new Date(expiresAt.getTime() + 2 * 24 * 60 * 60 * 1000);
+          else if (day === 0) expiresAt = new Date(expiresAt.getTime() + 1 * 24 * 60 * 60 * 1000);
+        }
+      } else if (timeframe === "SWING") {
+        expiresAt = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
+      } else {
+        expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
       }
-    } else if (timeframe === "SWING") {
-      expiresAt = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
-    } else {
-      expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-    }
 
-    for (const sig of analysisResult.signals ?? []) {
-      try {
-        const [saved] = await db
-          .insert(signals)
-          .values({
-            symbol: symbol.toUpperCase(),
-            instrumentType: sig.instrumentType || instrumentType,
-            action: sig.action,
-            displayText: sig.displayText,
-            entryPrice: sig.entryPrice ?? null,
-            targetPrice: sig.targetPrice ?? null,
-            stopLoss: sig.stopLoss ?? null,
-            confidence: Math.min(100, Math.max(0, sig.confidence ?? 50)),
-            rationale: sig.rationale || "",
-            status: "ACTIVE",
-            timeframe,
-            expiresAt,
-          })
-          .returning();
+      for (const sig of filteredSignals) {
+        try {
+          const [saved] = await db
+            .insert(signals)
+            .values({
+              symbol: symbol.toUpperCase(),
+              instrumentType: sig.instrumentType || instrumentType,
+              action: sig.action,
+              displayText: sig.displayText,
+              entryPrice: sig.entryPrice ?? null,
+              targetPrice: sig.targetPrice ?? null,
+              stopLoss: sig.stopLoss ?? null,
+              confidence: Math.min(100, Math.max(0, sig.confidence ?? 50)),
+              rationale: sig.rationale || "",
+              status: "ACTIVE",
+              timeframe,
+              expiresAt,
+            })
+            .returning();
 
-        savedSignals.push({
-          ...saved,
-          createdAt: saved.createdAt.toISOString(),
-          expiresAt: saved.expiresAt?.toISOString() ?? null,
-        });
-      } catch {
-        // Skip if signal save fails
+          savedSignals.push({
+            ...saved,
+            createdAt: saved.createdAt.toISOString(),
+            expiresAt: saved.expiresAt?.toISOString() ?? null,
+          });
+        } catch {
+          // Skip if signal save fails
+        }
       }
     }
 
@@ -150,9 +196,22 @@ Provide 1-3 specific, actionable signals. If ${instrumentType} is OPTIONS, sugge
       symbol: symbol.toUpperCase(),
       summary: analysisResult.summary ?? "",
       keyLevels: analysisResult.keyLevels ?? { support: [], resistance: [] },
-      signals: savedSignals,
+      signals: doSaveSignals ? savedSignals : filteredSignals.map((s) => ({
+        ...s,
+        confidence: Math.min(100, Math.max(0, s.confidence ?? 50)),
+      })),
       riskAssessment: analysisResult.riskAssessment ?? "",
       generatedAt: new Date().toISOString(),
+      meta: {
+        style: styleKey,
+        timeframe,
+        instrumentType,
+        numRequested: clampedNumSignals,
+        numGenerated: rawSignals.length,
+        numAfterFilter: filteredSignals.length,
+        confidenceThreshold: clampedThreshold,
+        savedToDb: doSaveSignals,
+      },
     });
   } catch (err) {
     req.log.error({ err }, "Failed to run agent analysis");
