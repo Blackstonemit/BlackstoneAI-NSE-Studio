@@ -52,6 +52,7 @@ A full-stack, real-time Indian stock market trading terminal with AI-generated s
 | technicalindicators | ^3.1.0 | RSI, MACD, BB, ATR, Stochastic |
 | openai | ^6.27.0 | OpenAI & NVIDIA API client |
 | @anthropic-ai/sdk | ^0.92.0 | Anthropic Claude client |
+| cross-env | latest | Cross-platform environment variables |
 | pino / pino-http | ^9 / ^10 | Structured JSON logging |
 | cors | ^2 | Cross-origin headers |
 | cookie-parser | ^1.4.7 | NSE session cookie management |
@@ -118,153 +119,149 @@ A full-stack, real-time Indian stock market trading terminal with AI-generated s
 
 ---
 
-## Local Installation — Step by Step
+## Local Installation — Windows (Step by Step)
 
 ### Prerequisites
 
-- **Node.js** v20 or newer → https://nodejs.org
-- **pnpm** v10 or newer → https://pnpm.io/installation
-- **PostgreSQL** v14 or newer → https://www.postgresql.org/download
+Install each of these before continuing:
 
-Verify installations:
+| Tool | Where to get it |
+|---|---|
+| **Node.js v20+** | https://nodejs.org — choose the LTS installer (.msi) |
+| **pnpm v10+** | Run `npm install -g pnpm` after Node.js is installed |
+| **PostgreSQL 14+** | https://www.postgresql.org/download/windows — use the EDB installer |
+| **Git** | https://git-scm.com/download/win — needed to clone the repo |
 
-```bash
-node --version    # should print v20.x or higher
-pnpm --version    # should print 10.x or higher
-psql --version    # should print 14.x or higher
+Open **PowerShell** (or Windows Terminal with PowerShell) and verify:
+
+```powershell
+node --version    # v20.x or higher
+pnpm --version    # 10.x or higher
+psql --version    # 14.x or higher
+git --version
 ```
 
 ---
 
 ### Step 1 — Clone the Repository
 
-```bash
+```powershell
 git clone <your-repo-url>
 cd <repo-folder>
 ```
 
 ---
 
-### Step 2 — Fix pnpm Workspace Config for Non-Linux Systems
+### Step 2 — Fix `pnpm-workspace.yaml` for Windows
 
-> **macOS / Windows only.** The workspace strips non-Linux esbuild/rollup binaries for Replit's server environment. You must remove those overrides to run locally.
+The workspace file strips Windows-specific native binaries to reduce size on Replit's Linux servers. **You must remove those entries before installing on Windows**, otherwise esbuild, Vite, Rollup and Tailwind CSS will fail to find their native modules.
 
-Open `pnpm-workspace.yaml` and **delete the entire `overrides:` block** (from line `overrides:` down to the end of the file). Keep everything above it intact.
+Open `pnpm-workspace.yaml` in any text editor and **delete the entire `overrides:` block** — everything from the line that says `overrides:` down to the very end of the file. Keep all lines above it (`minimumReleaseAge`, `packages`, `catalog`, etc.).
+
+The block to delete starts at this line:
+```yaml
+overrides:
+  # replit uses linux-x64 only, we can exclude all other platforms
+  "esbuild>@esbuild/darwin-arm64": "-"
+  ...
+```
+
+Save the file after deleting that section.
 
 ---
 
-### Step 3 — Install Dependencies
+### Step 3 — Fix the Root `preinstall` Script
 
-```bash
+The root `package.json` has a preinstall hook that uses a Unix shell command (`sh -c`). On Windows this will fail unless you have Git Bash. The safest fix is to **remove the `preinstall` line** from the root `package.json`.
+
+Open `package.json` in the root folder. Find and remove this line:
+
+```json
+"preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
+```
+
+Make sure the `scripts` object still has valid JSON (no trailing comma on the last remaining script).
+
+---
+
+### Step 4 — Install All Dependencies
+
+```powershell
 pnpm install
 ```
 
-This installs all packages for every workspace (api-server, market-dashboard, shared libs) in one command.
+This installs packages for all workspace packages in one step.
 
 ---
 
-### Step 4 — Create the PostgreSQL Database
+### Step 5 — Create the PostgreSQL Database
 
-```bash
+Open the **SQL Shell (psql)** that was installed with PostgreSQL, or run:
+
+```powershell
 psql -U postgres
 ```
 
-Inside the psql prompt:
+Inside the psql prompt, run:
 
 ```sql
 CREATE DATABASE trading_terminal;
-CREATE USER trading_user WITH PASSWORD 'your_password';
+CREATE USER trading_user WITH PASSWORD 'yourpassword';
 GRANT ALL PRIVILEGES ON DATABASE trading_terminal TO trading_user;
 \q
 ```
 
 ---
 
-### Step 5 — Set Up Environment Variables
+### Step 6 — Create a `.env` File
 
-Create a `.env` file in the project root:
+Create a file named `.env` in the **project root** (same folder as `package.json`):
 
 ```env
-# ── Database ──────────────────────────────────────────────────────────────────
-DATABASE_URL=postgresql://trading_user:your_password@localhost:5432/trading_terminal
-
-# ── API Server ────────────────────────────────────────────────────────────────
-PORT=3001
-
-# ── AI (Primary — NVIDIA Qwen) ────────────────────────────────────────────────
-# Get a free key at: https://build.nvidia.com
+DATABASE_URL=postgresql://trading_user:yourpassword@localhost:5432/trading_terminal
 NVIDIA_API_KEY=nvapi-xxxxxxxxxxxxxxxxxxxx
 ```
 
-> **OpenAI, Anthropic, Gemini keys** are optional and stored in the database via the Settings page in the UI, not as environment variables.
+> Get a free NVIDIA API key at https://build.nvidia.com — it is used for AI signal generation.
 
 ---
 
-### Step 6 — Run Database Migrations
+### Step 7 — Run Database Migrations
 
-```bash
-cd lib/db
-DATABASE_URL=postgresql://trading_user:your_password@localhost:5432/trading_terminal \
-  pnpm drizzle-kit push
-cd ../..
+Open a PowerShell window and run:
+
+```powershell
+cd lib\db
+$env:DATABASE_URL="postgresql://trading_user:yourpassword@localhost:5432/trading_terminal"
+pnpm drizzle-kit push
+cd ..\..
 ```
 
-This creates all five tables (`signals`, `watchlist`, `provider_settings`, `conversations`, `messages`).
+This creates all five database tables. Verify with:
 
-Verify the tables were created:
-
-```bash
+```powershell
 psql -U trading_user -d trading_terminal -c "\dt"
 ```
 
+You should see: `signals`, `watchlist`, `provider_settings`, `conversations`, `messages`.
+
 ---
 
-### Step 7 — Build Shared Libraries
+### Step 8 — Build Shared Libraries
 
-The frontend and API server both depend on shared packages (`@workspace/db`, `@workspace/api-zod`, `@workspace/api-client-react`). Build them first:
-
-```bash
+```powershell
 pnpm run typecheck:libs
 ```
 
----
-
-### Step 8 — Start the API Server
-
-Open a terminal and run:
-
-```bash
-PORT=3001 DATABASE_URL=postgresql://trading_user:your_password@localhost:5432/trading_terminal \
-  pnpm --filter @workspace/api-server run dev
-```
-
-The server starts at **http://localhost:3001**
-
-Test it is running:
-
-```bash
-curl http://localhost:3001/api/healthz
-# Expected: {"status":"ok", ...}
-```
+This compiles the shared `@workspace/db`, `@workspace/api-zod`, and `@workspace/api-client-react` packages that both the server and frontend depend on.
 
 ---
 
-### Step 9 — Start the Frontend
+### Step 9 — Add the Vite Proxy (Required for Local)
 
-Open a second terminal and run:
+On Replit a reverse proxy routes `/api` to the API server automatically. Locally you must configure Vite to do this.
 
-```bash
-PORT=5173 BASE_PATH=/ \
-  pnpm --filter @workspace/market-dashboard run dev
-```
-
-The frontend starts at **http://localhost:5173**
-
----
-
-### Step 10 — Configure API Base URL (Local Only)
-
-In Replit, a reverse proxy routes `/api` to the API server automatically. Locally you need to tell Vite to forward API requests. Add a `server.proxy` block to `artifacts/market-dashboard/vite.config.ts`:
+Open `artifacts/market-dashboard/vite.config.ts` and add the `proxy` key inside the `server` block:
 
 ```ts
 server: {
@@ -282,13 +279,95 @@ server: {
 },
 ```
 
-Restart the frontend dev server after saving this change.
+---
+
+### Step 10 — Start the API Server
+
+Open a **new PowerShell window** and run:
+
+```powershell
+$env:PORT="3001"
+$env:DATABASE_URL="postgresql://trading_user:yourpassword@localhost:5432/trading_terminal"
+$env:NVIDIA_API_KEY="nvapi-xxxxxxxxxxxxxxxxxxxx"
+pnpm --filter @workspace/api-server run dev
+```
+
+Wait until you see:
+
+```
+Server listening  {"port":3001}
+Scheduler started
+```
+
+Test it is working:
+
+```powershell
+curl http://localhost:3001/api/healthz
+```
+
+Expected response: `{"status":"ok", ...}`
 
 ---
 
-### Step 11 — Open the App
+### Step 11 — Start the Frontend
 
-Navigate to **http://localhost:5173** in your browser.
+Open a **second PowerShell window** and run:
+
+```powershell
+$env:PORT="5173"
+$env:BASE_PATH="/"
+pnpm --filter @workspace/market-dashboard run dev
+```
+
+Wait until you see:
+
+```
+VITE v7.x  ready in ...ms
+➜  Local: http://localhost:5173/
+```
+
+---
+
+### Step 12 — Open the App
+
+Open your browser and go to:
+
+```
+http://localhost:5173
+```
+
+All 11 pages should load and work correctly.
+
+---
+
+## Using a `.env` File Automatically (Optional)
+
+Instead of setting `$env:` variables in every terminal session, install `dotenv-cli` globally:
+
+```powershell
+npm install -g dotenv-cli
+```
+
+Then start each service using:
+
+```powershell
+# API server
+dotenv -e .env -- pnpm --filter @workspace/api-server run dev
+
+# Frontend (add PORT and BASE_PATH to your .env too)
+dotenv -e .env -- pnpm --filter @workspace/market-dashboard run dev
+```
+
+Add these lines to your `.env` file:
+
+```env
+DATABASE_URL=postgresql://trading_user:yourpassword@localhost:5432/trading_terminal
+NVIDIA_API_KEY=nvapi-xxxxxxxxxxxxxxxxxxxx
+PORT=3001
+BASE_PATH=/
+```
+
+> Note: PORT and BASE_PATH differ between the two processes, so you will still need to set PORT per-terminal unless you use two separate `.env` files.
 
 ---
 
@@ -324,36 +403,11 @@ Navigate to **http://localhost:5173** in your browser.
 | Variable | Required | Description |
 |---|---|---|
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `PORT` | Yes | Port for each service (different per process) |
-| `BASE_PATH` | Yes (frontend) | URL base path (`/` locally, auto-set on Replit) |
+| `PORT` | Yes | Port for each service (3001 for API, 5173 for frontend) |
+| `BASE_PATH` | Yes (frontend) | URL base path — use `/` locally |
 | `NVIDIA_API_KEY` | Recommended | NVIDIA Build API key for Qwen AI model |
-| `OPENAI_API_KEY` | Optional | Set in UI Settings page instead |
 
----
-
-## Running in Production
-
-### Build all packages
-
-```bash
-pnpm run build
-```
-
-### Start the API server
-
-```bash
-PORT=3001 DATABASE_URL=<your-db-url> NVIDIA_API_KEY=<key> \
-  node --enable-source-maps artifacts/api-server/dist/index.mjs
-```
-
-### Serve the frontend (static)
-
-```bash
-PORT=8080 BASE_PATH=/ \
-  pnpm --filter @workspace/market-dashboard run serve
-```
-
-Or copy `artifacts/market-dashboard/dist/public/` to any static host (Nginx, Vercel, etc.) and proxy `/api/*` to your API server.
+> **OpenAI, Anthropic, and Gemini keys** are optional and stored in the database via the Settings page in the app — not as environment variables.
 
 ---
 
@@ -363,21 +417,24 @@ Or copy `artifacts/market-dashboard/dist/public/` to any static host (Nginx, Ver
 |---|---|---|
 | Index quotes | NSE India live API → Yahoo Finance fallback | NSE uses cookie/session (4-min TTL) |
 | Stock quotes | Yahoo Finance (`yahoo-finance2`) | Real-time during market hours |
-| Options chain | NSE India live → Yahoo Finance → Synthetic | Synthetic data labeled in UI |
+| Options chain | NSE India live → Yahoo Finance → Synthetic | Synthetic data is labeled in UI |
 | Historical OHLCV | Yahoo Finance | Used by Charts & Backtest pages |
-| Futures OI | Simulated | No free real futures OI data source |
-| Bhavcopy | Uploaded by user | Processed entirely in the browser |
+| Futures OI | Simulated | No free real futures OI data source available |
+| Bhavcopy | Uploaded by user | Processed entirely in the browser, nothing sent to server |
 
 ---
 
-## Troubleshooting
+## Windows Troubleshooting
 
-| Problem | Solution |
-|---|---|
-| `PORT is required` error | Make sure you pass `PORT=...` before the start command |
-| `DATABASE_URL` not found | Check `.env` file path and that you exported the variable |
-| esbuild binary missing (macOS/Windows) | Remove the `overrides:` block from `pnpm-workspace.yaml` and run `pnpm install` again |
-| API calls return 404 on frontend | Add the Vite `proxy` config in Step 10 |
-| NSE data not loading | NSE blocks non-Indian IPs; Yahoo Finance fallback activates automatically |
-| No AI signals generated | Add a valid `NVIDIA_API_KEY` in `.env` or set OpenAI/Anthropic key in Settings page |
-| DB tables missing | Re-run `drizzle-kit push` from the `lib/db` directory |
+| Problem | Cause | Fix |
+|---|---|---|
+| `pnpm install` fails with missing binary | Windows binaries removed in `overrides:` | Delete the entire `overrides:` block from `pnpm-workspace.yaml` |
+| `sh: command not found` during install | `preinstall` uses Unix shell | Remove the `preinstall` line from root `package.json` |
+| `export: command not found` when starting API | Old Unix-style `export` in dev script | Already fixed — uses `cross-env` now |
+| API calls return 404 on the frontend | No proxy configured locally | Add the Vite `proxy` config in Step 9 |
+| `PORT is required` error | Environment variable not set | Use `$env:PORT="3001"` in PowerShell before running |
+| `DATABASE_URL` not found | `.env` not loaded automatically | Set with `$env:DATABASE_URL="..."` or use `dotenv-cli` |
+| NSE live data not loading | NSE blocks non-Indian IPs | Normal — Yahoo Finance fallback activates automatically |
+| No AI signals generated | Missing NVIDIA key | Add `NVIDIA_API_KEY` to `.env` or set an OpenAI/Anthropic key in the Settings page |
+| DB tables missing after push | Migration did not run | Re-run `pnpm drizzle-kit push` from the `lib\db` directory |
+| `psql` not found | PostgreSQL bin not in PATH | Add `C:\Program Files\PostgreSQL\<version>\bin` to your Windows PATH |
