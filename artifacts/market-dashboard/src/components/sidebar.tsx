@@ -5,9 +5,10 @@ import {
   BarChart2, 
   Layers, 
   TrendingUp, 
-  PieChart, 
   List,
-  TerminalSquare
+  TerminalSquare,
+  FlaskConical,
+  Settings2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +19,9 @@ const navItems = [
   { href: "/options", label: "Options Chain", icon: Layers },
   { href: "/futures", label: "Futures", icon: BarChart2 },
   { href: "/analysis", label: "Technical Analysis", icon: TrendingUp },
+  { href: "/backtest", label: "Backtest", icon: FlaskConical },
   { href: "/watchlist", label: "Watchlist", icon: List },
+  { href: "/settings", label: "Settings", icon: Settings2 },
 ];
 
 export function Sidebar() {
