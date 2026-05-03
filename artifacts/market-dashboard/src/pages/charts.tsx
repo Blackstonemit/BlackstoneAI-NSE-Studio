@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import {
   createChart,
   ColorType,
@@ -166,19 +166,36 @@ const OVERLAY_LABELS: Record<OverlayKey, string> = {
   rsi:   "RSI 14",
 };
 
+// ── Search result type ────────────────────────────────────────────────────────
+type SearchResult = {
+  symbol: string;
+  yahooSymbol: string;
+  name: string;
+  exchange: string;
+  type: string;
+};
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function ChartsPage() {
   const settings = loadSettings();
 
   const [preset, setPreset] = useState<Preset>(PRESETS[0]);
-  const [customInput, setCustomInput] = useState("");
   const [intervalCfg, setIntervalCfg] = useState<IntervalCfg>(INTERVALS[1]); // 5m
   const [chartStyle, setChartStyle] = useState<ChartStyle>("candles");
   const [overlays, setOverlays] = useState<Record<OverlayKey, boolean>>({
     sma20: true, ema9: true, bb: false, vol: true, rsi: true,
   });
   const [fullscreen, setFullscreen] = useState(false);
+
+  // ── Symbol search state ────────────────────────────────────────────────────
+  const [searchQuery, setSearchQuery]   = useState("");
+  const [searchOpen, setSearchOpen]     = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedIdx, setSelectedIdx]   = useState(-1);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const apiSymbol = preset.apiSymbol;
 
@@ -357,12 +374,61 @@ export default function ChartsPage() {
   const toggleOverlay = (k: OverlayKey) =>
     setOverlays((prev) => ({ ...prev, [k]: !prev[k] }));
 
-  const applyCustom = () => {
-    const sym = customInput.trim().toUpperCase();
-    if (!sym) return;
-    setPreset({ label: sym, apiSymbol: sym, tag: "STK" });
-    setCustomInput("");
+  // ── Search logic ────────────────────────────────────────────────────────────
+  const runSearch = useCallback(async (q: string) => {
+    if (!q.trim()) { setSearchResults([]); return; }
+    setSearchLoading(true);
+    try {
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${base}/api/market/search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      setSearchResults(data.results ?? []);
+      setSelectedIdx(-1);
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, []);
+
+  const onSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSearchQuery(val);
+    setSearchOpen(true);
+    setSelectedIdx(-1);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => runSearch(val), 280);
   };
+
+  const selectResult = (r: SearchResult) => {
+    setPreset({ label: r.symbol, apiSymbol: r.symbol, tag: r.type === "Index" ? "IDX" : "STK" });
+    setSearchQuery("");
+    setSearchOpen(false);
+    setSearchResults([]);
+  };
+
+  const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape") { setSearchOpen(false); return; }
+    if (e.key === "ArrowDown") { setSelectedIdx((i) => Math.min(i + 1, searchResults.length - 1)); return; }
+    if (e.key === "ArrowUp")   { setSelectedIdx((i) => Math.max(i - 1, 0)); return; }
+    if (e.key === "Enter") {
+      if (selectedIdx >= 0 && searchResults[selectedIdx]) {
+        selectResult(searchResults[selectedIdx]);
+      } else {
+        const sym = searchQuery.trim().toUpperCase();
+        if (sym) { setPreset({ label: sym, apiSymbol: sym, tag: "STK" }); setSearchQuery(""); setSearchOpen(false); }
+      }
+    }
+  };
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const last = processed?.last;
   const chg  = processed?.chg ?? 0;
@@ -400,16 +466,55 @@ export default function ChartsPage() {
             ))}
           </div>
 
-          {/* Custom symbol */}
-          <div className="flex items-center gap-1 ml-1">
-            <input
-              value={customInput}
-              onChange={(e) => setCustomInput(e.target.value.toUpperCase())}
-              onKeyDown={(e) => e.key === "Enter" && applyCustom()}
-              placeholder="SYMBOL…"
-              className="w-24 h-6 px-1.5 text-[11px] font-mono bg-[#111] border border-[#2a2a2a] rounded-sm text-[#aaa] placeholder:text-[#444] focus:outline-none focus:border-primary"
-            />
-            <button onClick={applyCustom} className="h-6 px-1.5 text-[11px] font-mono border border-[#2a2a2a] rounded-sm text-[#666] hover:text-primary hover:border-primary transition-colors">GO</button>
+          {/* Live symbol search */}
+          <div ref={searchRef} className="relative ml-1">
+            <div className="flex items-center gap-0 border border-[#2a2a2a] rounded-sm overflow-visible bg-[#111] focus-within:border-primary transition-colors">
+              <span className="pl-1.5 text-[#444]">
+                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              </span>
+              <input
+                value={searchQuery}
+                onChange={onSearchChange}
+                onKeyDown={onSearchKeyDown}
+                onFocus={() => { if (searchQuery) setSearchOpen(true); }}
+                placeholder="Search symbol…"
+                className="w-32 h-6 px-1.5 text-[11px] font-mono bg-transparent text-[#aaa] placeholder:text-[#444] focus:outline-none"
+              />
+              {searchLoading && (
+                <span className="pr-1.5 text-[#444] animate-spin">
+                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                </span>
+              )}
+            </div>
+            {/* Dropdown */}
+            {searchOpen && searchResults.length > 0 && (
+              <div className="absolute top-full left-0 mt-0.5 w-72 bg-[#111] border border-[#2a2a2a] rounded-sm shadow-xl z-50 overflow-hidden">
+                {searchResults.map((r, i) => (
+                  <button
+                    key={r.yahooSymbol}
+                    onClick={() => selectResult(r)}
+                    className={cn(
+                      "w-full flex items-center justify-between px-2.5 py-1.5 text-left transition-colors",
+                      i === selectedIdx ? "bg-primary/20 text-primary" : "hover:bg-[#1a1a1a] text-[#aaa]"
+                    )}
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-[11px] font-mono font-bold leading-none">{r.symbol}</span>
+                      <span className="text-[10px] text-[#555] truncate max-w-[180px]">{r.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[9px] font-mono text-[#444]">{r.exchange}</span>
+                      <span className="text-[9px] font-mono px-1 py-0.5 border border-[#2a2a2a] rounded text-[#555]">{r.type}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            {searchOpen && !searchLoading && searchQuery.length > 0 && searchResults.length === 0 && (
+              <div className="absolute top-full left-0 mt-0.5 w-56 bg-[#111] border border-[#2a2a2a] rounded-sm shadow-xl z-50 px-3 py-2 text-[11px] font-mono text-[#555]">
+                No NSE/BSE results
+              </div>
+            )}
           </div>
 
           {/* Live quote */}

@@ -411,12 +411,17 @@ router.get("/market/futures", async (req, res) => {
 router.get("/market/history", async (req, res) => {
   try {
     const query = GetMarketHistoryQueryParams.parse(req.query);
-    const yahooSym =
-      query.symbol === "NIFTY"
-        ? "^NSEI"
-        : query.symbol === "BANKNIFTY"
-          ? "^NSEBANK"
-          : toYahooSymbol(query.symbol);
+    const INDEX_MAP: Record<string, string> = {
+      NIFTY:      "^NSEI",
+      NIFTY50:    "^NSEI",
+      BANKNIFTY:  "^NSEBANK",
+      FINNIFTY:   "^CNXFIN",
+      MIDCPNIFTY: "^NSEMDCP50",
+      SENSEX:     "^BSESN",
+      NIFTYMID:   "^NSEMDCP50",
+      NIFTYIT:    "^CNXIT",
+    };
+    const yahooSym = INDEX_MAP[query.symbol.toUpperCase()] ?? toYahooSymbol(query.symbol);
 
     const periodMap: Record<string, string> = {
       "1d": "1d",
@@ -513,6 +518,31 @@ router.get("/market/movers", async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Failed to fetch movers");
     res.status(500).json({ error: "Failed to fetch market movers" });
+  }
+});
+
+// ── Symbol search ─────────────────────────────────────────────────────────────
+router.get("/market/search", async (req, res) => {
+  try {
+    const q = String(req.query.q ?? "").trim();
+    if (!q) return res.json({ results: [] });
+
+    const raw = await yahooFinance.search(q, { newsCount: 0 });
+    const results = (raw.quotes ?? [])
+      .filter((r: any) => r.exchange && (r.exchange.includes("NSE") || r.exchange.includes("BSE") || r.typeDisp === "Index"))
+      .slice(0, 8)
+      .map((r: any) => ({
+        symbol: r.symbol?.replace(/\.NS$|\.BO$/, "") ?? r.symbol,
+        yahooSymbol: r.symbol,
+        name: r.longname || r.shortname || r.symbol,
+        exchange: r.exchange ?? "",
+        type: r.typeDisp ?? "Equity",
+      }));
+
+    return res.json({ results });
+  } catch (err) {
+    req.log.error({ err }, "Symbol search failed");
+    return res.status(500).json({ error: "Search failed" });
   }
 });
 
