@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "eS6OfiXtUdprR1B2M-g7X"
+uri = "file://windows-installer.tar.gz"
+type = "unspecified"
+title = "Windows Installer Scripts (install.bat, start.bat, uninstall.bat)"
