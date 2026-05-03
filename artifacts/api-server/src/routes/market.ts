@@ -7,6 +7,13 @@ import {
   GetOptionsChainQueryParams,
   GetFuturesQueryParams,
 } from "@workspace/api-zod";
+import {
+  nseClient,
+  nseExpiryToISO,
+  NSE_INDEX_SYMBOLS,
+  type NseOptionChainResponse,
+  type NseAllIndicesResponse,
+} from "../lib/nse.js";
 
 const router: IRouter = Router();
 
@@ -85,83 +92,211 @@ router.get("/market/quotes", async (req, res) => {
 });
 
 router.get("/market/indices", async (req, res) => {
+  // Try NSE first, fall back to Yahoo Finance
   try {
-    const results = await Promise.all(
-      INDICES.map(async (idx) => {
-        try {
-          const q = await yahooFinance.quote(idx.yahooSymbol);
-          const price = q.regularMarketPrice ?? q.regularMarketPreviousClose ?? 0;
-          return {
-            symbol: idx.symbol,
-            name: idx.name,
-            value: price,
-            change: q.regularMarketChange ?? 0,
-            changePercent: q.regularMarketChangePercent ?? 0,
-            high: q.regularMarketDayHigh ?? price,
-            low: q.regularMarketDayLow ?? price,
-            timestamp: new Date().toISOString(),
-          };
-        } catch {
-          return {
-            symbol: idx.symbol,
-            name: idx.name,
-            value: 0,
-            change: 0,
-            changePercent: 0,
-            high: 0,
-            low: 0,
-            timestamp: new Date().toISOString(),
-          };
-        }
-      })
-    );
+    const nseData = await nseClient.get<NseAllIndicesResponse>("/allIndices");
+    const nseMap = new Map(nseData.data.map((d) => [d.indexSymbol, d]));
+
+    const NSE_INDEX_NAME_MAP: Record<string, string> = {
+      NIFTY50:    "NIFTY 50",
+      BANKNIFTY:  "NIFTY BANK",
+      SENSEX:     "S&P BSE SENSEX",
+      NIFTYMID:   "NIFTY MIDCAP 50",
+      NIFTYIT:    "NIFTY IT",
+    };
+
+    // BSE SENSEX is not in NSE's allIndices — fetch from Yahoo for it
+    const sensexYahoo = await yahooFinance.quote("^BSESN").catch(() => null);
+
+    const results = await Promise.all(INDICES.map(async (idx) => {
+      // SENSEX: BSE index, use Yahoo Finance
+      if (idx.symbol === "SENSEX") {
+        const price = sensexYahoo?.regularMarketPrice ?? 0;
+        return {
+          symbol: idx.symbol,
+          name: idx.name,
+          value: price,
+          change: sensexYahoo?.regularMarketChange ?? 0,
+          changePercent: sensexYahoo?.regularMarketChangePercent ?? 0,
+          high: sensexYahoo?.regularMarketDayHigh ?? price,
+          low: sensexYahoo?.regularMarketDayLow ?? price,
+          open: sensexYahoo?.regularMarketOpen ?? price,
+          previousClose: sensexYahoo?.regularMarketPreviousClose ?? 0,
+          yearHigh: sensexYahoo?.fiftyTwoWeekHigh ?? 0,
+          yearLow: sensexYahoo?.fiftyTwoWeekLow ?? 0,
+          dataSource: "Yahoo",
+          timestamp: new Date().toISOString(),
+        };
+      }
+      const nse = nseMap.get(NSE_INDEX_NAME_MAP[idx.symbol] ?? idx.name);
+      if (nse) {
+        return {
+          symbol: idx.symbol,
+          name: idx.name,
+          value: nse.last ?? 0,
+          change: nse.variation ?? 0,
+          changePercent: nse.percentChange ?? 0,
+          high: nse.high ?? 0,
+          low: nse.low ?? 0,
+          open: nse.open ?? 0,
+          previousClose: nse.previousClose ?? 0,
+          yearHigh: nse.yearHigh ?? 0,
+          yearLow: nse.yearLow ?? 0,
+          dataSource: "NSE",
+          timestamp: nseData.timestamp ?? new Date().toISOString(),
+        };
+      }
+      return {
+        symbol: idx.symbol,
+        name: idx.name,
+        value: 0,
+        change: 0,
+        changePercent: 0,
+        high: 0,
+        low: 0,
+        dataSource: "unavailable",
+        timestamp: new Date().toISOString(),
+      };
+    }));
 
     res.json(results);
-  } catch (err) {
-    req.log.error({ err }, "Failed to fetch indices");
-    res.status(500).json({ error: "Failed to fetch indices" });
+  } catch (nseErr) {
+    req.log.warn({ err: nseErr }, "NSE indices failed, falling back to Yahoo");
+    try {
+      const results = await Promise.all(
+        INDICES.map(async (idx) => {
+          try {
+            const q = await yahooFinance.quote(idx.yahooSymbol);
+            const price = q.regularMarketPrice ?? q.regularMarketPreviousClose ?? 0;
+            return {
+              symbol: idx.symbol,
+              name: idx.name,
+              value: price,
+              change: q.regularMarketChange ?? 0,
+              changePercent: q.regularMarketChangePercent ?? 0,
+              high: q.regularMarketDayHigh ?? price,
+              low: q.regularMarketDayLow ?? price,
+              dataSource: "Yahoo",
+              timestamp: new Date().toISOString(),
+            };
+          } catch {
+            return { symbol: idx.symbol, name: idx.name, value: 0, change: 0, changePercent: 0, high: 0, low: 0, dataSource: "unavailable", timestamp: new Date().toISOString() };
+          }
+        })
+      );
+      res.json(results);
+    } catch (err) {
+      req.log.error({ err }, "Failed to fetch indices");
+      res.status(500).json({ error: "Failed to fetch indices" });
+    }
   }
 });
 
 router.get("/market/options-chain", async (req, res) => {
+  const query = GetOptionsChainQueryParams.parse(req.query);
+  const symbol = query.symbol.toUpperCase();
+
+  // ── 1. Try NSE live data ───────────────────────────────────────────────────
+  const isIndex = symbol in NSE_INDEX_SYMBOLS || ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY"].includes(symbol);
   try {
-    const query = GetOptionsChainQueryParams.parse(req.query);
-    const symbol = query.symbol;
+    const endpoint = isIndex
+      ? `/option-chain-indices?symbol=${encodeURIComponent(symbol)}`
+      : `/option-chain-equities?symbol=${encodeURIComponent(symbol)}`;
+
+    const nse = await nseClient.get<NseOptionChainResponse>(endpoint);
+    const records = nse.records;
+
+    if (!records || !records.data || records.data.length === 0) throw new Error("Empty NSE response");
+
+    const underlyingPrice = records.underlyingValue ?? 0;
+    const allExpiries = records.expiryDates ?? [];
+    const expiries = allExpiries.map(nseExpiryToISO);
+
+    // Pick expiry filter
+    let selectedExpiryISO = expiries[0] ?? "";
+    let selectedExpiryLabel = allExpiries[0] ?? "";
+    if (query.expiry) {
+      const idx = expiries.findIndex((e) => e === query.expiry);
+      if (idx >= 0) {
+        selectedExpiryISO = expiries[idx];
+        selectedExpiryLabel = allExpiries[idx];
+      }
+    }
+
+    // Filter rows to selected expiry and build calls/puts maps
+    const rows = records.data.filter((r) => r.expiryDate === selectedExpiryLabel);
+
+    // Build sorted unique strike list
+    const strikes = [...new Set(rows.map((r) => r.strikePrice))].sort((a, b) => a - b);
+
+    // Map contracts
+    const mapNse = (c: any, type: "CE" | "PE") => ({
+      strikePrice: c.strikePrice,
+      expiry: selectedExpiryISO,
+      type,
+      ltp:              c.lastPrice ?? 0,
+      change:           c.change ?? 0,
+      changePercent:    c.pChange ?? 0,
+      volume:           c.totalTradedVolume ?? 0,
+      openInterest:     c.openInterest ?? 0,
+      impliedVolatility: c.impliedVolatility ?? 0,
+      // NSE-specific extras
+      changeInOI:       c.changeinOpenInterest ?? 0,
+      pChangeInOI:      c.pchangeinOpenInterest ?? 0,
+      bid:              c.bidprice ?? 0,
+      ask:              c.askPrice ?? 0,
+      bidQty:           c.bidQty ?? 0,
+      askQty:           c.askQty ?? 0,
+      delta:            null,
+      theta:            null,
+    });
+
+    const rowByStrike = new Map(rows.map((r) => [r.strikePrice, r]));
+
+    const calls: any[] = [];
+    const puts: any[] = [];
+
+    for (const strike of strikes) {
+      const row = rowByStrike.get(strike);
+      if (row?.CE) calls.push(mapNse(row.CE, "CE"));
+      if (row?.PE) puts.push(mapNse(row.PE, "PE"));
+    }
+
+    return res.json({
+      symbol,
+      underlyingPrice,
+      expiries,
+      selectedExpiry: selectedExpiryISO,
+      dataSource: "NSE",
+      timestamp: new Date().toISOString(),
+      calls,
+      puts,
+    });
+  } catch (nseErr) {
+    req.log.warn({ err: nseErr }, "NSE options chain failed, falling back to Yahoo Finance");
+  }
+
+  // ── 2. Yahoo Finance fallback ──────────────────────────────────────────────
+  try {
     const yahooSym =
-      symbol === "NIFTY"
-        ? "^NSEI"
-        : symbol === "BANKNIFTY"
-          ? "^NSEBANK"
-          : toYahooSymbol(symbol);
+      symbol === "NIFTY" ? "^NSEI"
+      : symbol === "BANKNIFTY" ? "^NSEBANK"
+      : toYahooSymbol(symbol);
 
     let underlyingPrice = 0;
     try {
       const q = await yahooFinance.quote(yahooSym);
       underlyingPrice = q.regularMarketPrice ?? 0;
-    } catch {
-      underlyingPrice = 22000;
-    }
+    } catch { underlyingPrice = 22000; }
 
-    // Get options chain from yahoo finance
     let optionChain: any = null;
-    try {
-      optionChain = await yahooFinance.options(yahooSym);
-    } catch {
-      // Return synthetic options data if yahoo doesn't support it
-    }
+    try { optionChain = await yahooFinance.options(yahooSym); } catch { /* ignore */ }
 
-    if (
-      optionChain &&
-      optionChain.options &&
-      optionChain.options.length > 0
-    ) {
-      const expiries = optionChain.expirationDates?.map((d: Date) =>
-        d.toISOString()
-      ) || [];
+    if (optionChain?.options?.length > 0) {
+      const expiries = (optionChain.expirationDates ?? []).map((d: Date) => d.toISOString());
       const selectedExpiry = query.expiry || expiries[0] || "";
       const chain = optionChain.options[0];
-
-      const mapContract = (c: any, type: "CE" | "PE") => ({
+      const mapY = (c: any, type: "CE" | "PE") => ({
         strikePrice: c.strike,
         expiry: selectedExpiry,
         type,
@@ -171,65 +306,50 @@ router.get("/market/options-chain", async (req, res) => {
         volume: c.volume ?? 0,
         openInterest: c.openInterest ?? 0,
         impliedVolatility: (c.impliedVolatility ?? 0) * 100,
-        delta: null,
-        theta: null,
+        changeInOI: 0, bid: 0, ask: 0, bidQty: 0, askQty: 0,
+        delta: null, theta: null,
       });
-
-      res.json({
-        symbol,
-        underlyingPrice,
-        expiries,
-        selectedExpiry,
-        calls: (chain.calls || []).map((c: any) => mapContract(c, "CE")),
-        puts: (chain.puts || []).map((p: any) => mapContract(p, "PE")),
-      });
-    } else {
-      // Generate synthetic options chain around current price
-      const strikes = [];
-      const base = Math.round(underlyingPrice / 100) * 100;
-      for (let i = -10; i <= 10; i++) {
-        strikes.push(base + i * 100);
-      }
-
-      const expiries = [
-        new Date(Date.now() + 7 * 86400000).toISOString(),
-        new Date(Date.now() + 14 * 86400000).toISOString(),
-        new Date(Date.now() + 21 * 86400000).toISOString(),
-      ];
-      const selectedExpiry = query.expiry || expiries[0];
-
-      const makeContracts = (type: "CE" | "PE") =>
-        strikes.map((strike) => {
-          const diff = Math.abs(strike - underlyingPrice);
-          const baseOI = Math.round(50000 + Math.random() * 200000);
-          const ltp = Math.max(5, Math.round((diff * 0.4 + Math.random() * 50) * 10) / 10);
-          return {
-            strikePrice: strike,
-            expiry: selectedExpiry,
-            type,
-            ltp,
-            change: Math.round((Math.random() * 40 - 20) * 10) / 10,
-            changePercent: Math.round((Math.random() * 10 - 5) * 10) / 10,
-            volume: Math.round(baseOI * 0.3),
-            openInterest: baseOI,
-            impliedVolatility: Math.round((15 + Math.random() * 25) * 10) / 10,
-            delta: null,
-            theta: null,
-          };
-        });
-
-      res.json({
-        symbol,
-        underlyingPrice,
-        expiries,
-        selectedExpiry,
-        calls: makeContracts("CE"),
-        puts: makeContracts("PE"),
+      return res.json({
+        symbol, underlyingPrice, expiries, selectedExpiry,
+        dataSource: "Yahoo",
+        timestamp: new Date().toISOString(),
+        calls: (chain.calls || []).map((c: any) => mapY(c, "CE")),
+        puts:  (chain.puts  || []).map((p: any) => mapY(p, "PE")),
       });
     }
+
+    // ── 3. Synthetic last-resort fallback ──────────────────────────────────
+    const base = Math.round(underlyingPrice / 100) * 100;
+    const strikes = Array.from({ length: 21 }, (_, i) => base + (i - 10) * 100);
+    const expiries = [7, 14, 21].map((d) => new Date(Date.now() + d * 86400000).toISOString());
+    const selectedExpiry = query.expiry || expiries[0];
+
+    const makeSynthetic = (type: "CE" | "PE") =>
+      strikes.map((strike) => {
+        const diff = Math.abs(strike - underlyingPrice);
+        const baseOI = Math.round(50000 + Math.random() * 200000);
+        const ltp = Math.max(5, Math.round((diff * 0.4 + Math.random() * 50) * 10) / 10);
+        return {
+          strikePrice: strike, expiry: selectedExpiry, type,
+          ltp, change: Math.round((Math.random() * 40 - 20) * 10) / 10,
+          changePercent: Math.round((Math.random() * 10 - 5) * 10) / 10,
+          volume: Math.round(baseOI * 0.3), openInterest: baseOI,
+          impliedVolatility: Math.round((15 + Math.random() * 25) * 10) / 10,
+          changeInOI: 0, bid: 0, ask: 0, bidQty: 0, askQty: 0,
+          delta: null, theta: null,
+        };
+      });
+
+    return res.json({
+      symbol, underlyingPrice, expiries, selectedExpiry,
+      dataSource: "synthetic",
+      timestamp: new Date().toISOString(),
+      calls: makeSynthetic("CE"),
+      puts:  makeSynthetic("PE"),
+    });
   } catch (err) {
     req.log.error({ err }, "Failed to fetch options chain");
-    res.status(500).json({ error: "Failed to fetch options chain" });
+    return res.status(500).json({ error: "Failed to fetch options chain" });
   }
 });
 
