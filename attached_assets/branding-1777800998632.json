@@ -1,0 +1,142 @@
+{
+  "colorScheme": "light",
+  "fonts": [
+    {
+      "family": "Poppins",
+      "role": "body"
+    }
+  ],
+  "colors": {
+    "primary": "#3A2E7D",
+    "secondary": "#EFB41D",
+    "accent": "#3A2D7D",
+    "background": "#FFFFFF",
+    "textPrimary": "#000000",
+    "link": "#3A2D7D"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "Poppins",
+      "heading": "Poppins"
+    },
+    "fontStacks": {
+      "heading": [
+        "Poppins",
+        "sans-serif"
+      ],
+      "body": [
+        "Poppins",
+        "sans-serif"
+      ],
+      "paragraph": [
+        "Poppins",
+        "sans-serif"
+      ]
+    },
+    "fontSizes": {
+      "h1": "24px",
+      "h2": "24px",
+      "body": "12px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 4,
+    "borderRadius": "7px"
+  },
+  "components": {
+    "input": {
+      "background": "#FFFFFF",
+      "textColor": "#000000",
+      "borderColor": "#E3E3E3",
+      "borderRadius": "8px",
+      "borderRadiusCorners": {
+        "topLeft": "8px",
+        "topRight": "0px",
+        "bottomRight": "0px",
+        "bottomLeft": "8px"
+      },
+      "shadow": "none"
+    },
+    "buttonPrimary": {
+      "background": "#EFEFEF",
+      "textColor": "#000000",
+      "borderColor": "#DEE2E6",
+      "borderRadius": "4px",
+      "borderRadiusCorners": {
+        "topLeft": "4px",
+        "topRight": "4px",
+        "bottomRight": "4px",
+        "bottomLeft": "4px"
+      },
+      "shadow": "none"
+    },
+    "buttonSecondary": {
+      "background": "#FFFFFF",
+      "textColor": "#212529",
+      "borderRadius": "0px",
+      "borderRadiusCorners": {
+        "topLeft": "0px",
+        "topRight": "0px",
+        "bottomRight": "0px",
+        "bottomLeft": "0px"
+      },
+      "shadow": "none"
+    }
+  },
+  "images": {
+    "logo": "https://www.nseindia.com/next-assets/images/NSE_Logo.svg",
+    "favicon": "https://www.nseindia.com/favicon.ico?favicon.8c25df6c.ico",
+    "ogImage": "https://www.nseindia.com/assets/images/nse-thumbnail.jpg",
+    "logoHref": "File saved at: attached_assets/logoHref.html",
+    "logoAlt": "NSE India"
+  },
+  "__llm_logo_reasoning": {
+    "selectedIndex": 0,
+    "reasoning": "Selected #0 because it is visible, located in the header, links to the homepage, and has alt text matching the brand 'NSE India'.",
+    "confidence": 0.95,
+    "source": "llm"
+  },
+  "__llm_button_reasoning": {
+    "primary": {
+      "index": 0,
+      "text": "Refresh",
+      "reasoning": "Button #0 'Refresh' is selected as the primary CTA because it is more action-oriented compared to 'Clear'. Both buttons share the same color group, but 'Refresh' is typically a more frequent action on such pages."
+    },
+    "secondary": {
+      "index": 2,
+      "text": "NIFTYInstrument TypeActive ContractsIndex FuturesIndex OptionsExpiry Date05-May-202612-May-202619-Ma",
+      "reasoning": "Button #2 is selected as secondary because it has a different background color (#FFFFFF) compared to the primary button (#EFEFEF). It also contains detailed information, making it less of a primary action."
+    },
+    "confidence": 0.9
+  },
+  "personality": {
+    "tone": "professional",
+    "energy": "medium",
+    "targetAudience": "investors and financial professionals"
+  },
+  "designSystem": {
+    "framework": "bootstrap",
+    "componentLibrary": ""
+  },
+  "confidence": {
+    "buttons": 0.9,
+    "colors": 0.95,
+    "overall": 0.925
+  },
+  "__llm_metadata": {
+    "logoSelection": {
+      "llmCalled": true,
+      "llmSucceeded": true,
+      "finalSource": "llm",
+      "rawLogoSelection": {
+        "selectedLogoIndex": 0,
+        "selectedLogoReasoning": "Selected #0 because it is visible, located in the header, links to the homepage, and has alt text matching the brand 'NSE India'.",
+        "confidence": 0.95
+      }
+    },
+    "buttonClassification": {
+      "llmCalled": true,
+      "llmSucceeded": true
+    }
+  }
+}
