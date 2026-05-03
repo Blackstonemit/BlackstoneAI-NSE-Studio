@@ -12,3 +12,9 @@ id = "QVlzM5sz6i-Oh-kjdDuSv"
 uri = "file://README.md"
 type = "text"
 title = "Windows Local Setup Guide — README.md"
+
+[[outputs]]
+id = "xmS6AsoboNuK3yRiZmCjs"
+uri = "file://nse-bse-trading-terminal.zip"
+type = "unspecified"
+title = "NSE/BSE AI Trading Terminal — Full Project Download"
