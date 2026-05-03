@@ -35,12 +35,22 @@ function computeTrend(
   return "NEUTRAL";
 }
 
+// Yahoo Finance data availability limits per interval
+const INTERVAL_LOOKBACK_MS: Record<string, number> = {
+  "1m":  7   * 86400000,
+  "5m":  55  * 86400000,  // keep under 60-day limit
+  "15m": 55  * 86400000,
+  "1h":  180 * 86400000,
+  "1d":  365 * 86400000,
+};
+
 async function computeTechnicals(symbol: string, interval: string = "1d") {
   const yahooSym = toYahooSymbol(symbol);
+  const lookback = INTERVAL_LOOKBACK_MS[interval] ?? INTERVAL_LOOKBACK_MS["1d"];
 
   const chart = await yahooFinance.chart(yahooSym, {
-    period1: new Date(Date.now() - 365 * 86400000),
-    interval: (interval === "1d" ? "1d" : interval) as any,
+    period1: new Date(Date.now() - lookback),
+    interval: interval as any,
   });
 
   const quotes = chart.quotes ?? [];

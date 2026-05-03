@@ -9,4 +9,4 @@ export const nvidia = new OpenAI({
   baseURL: "https://integrate.api.nvidia.com/v1",
 });
 
-export const NVIDIA_MODEL = "qwen/qwen3-235b-a22b";
+export const NVIDIA_MODEL = "qwen/qwen3.5-122b-a10b";
