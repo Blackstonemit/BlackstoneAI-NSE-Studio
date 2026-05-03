@@ -276,6 +276,7 @@ export default function OptionsChain() {
           <div className="overflow-x-auto">
             <table className="w-full text-xs font-mono border-collapse" style={{ minWidth: isNSE ? "1100px" : "700px" }}>
               <thead>
+
                 <tr>
                   <th colSpan={callCols} className="py-2 text-center text-white bg-blue-700/80 border-r border-blue-600 font-semibold tracking-widest">
                     CALLS
@@ -311,6 +312,7 @@ export default function OptionsChain() {
                 </tr>
               </thead>
 
+              <tbody>
               {chainData.calls.map((call, i) => {
                 const put = chainData.puts[i] as NseContract | undefined;
                 if (!put) return null;
@@ -324,11 +326,10 @@ export default function OptionsChain() {
                 const np = put  as NseContract;
 
                 return (
-                  <tbody key={call.strikePrice}>
-                    <tr className={cn(
-                      "border-b border-muted/30 transition-colors",
-                      isATM ? "hover:bg-yellow-500/10" : "hover:bg-muted/10"
-                    )}>
+                  <tr key={call.strikePrice} className={cn(
+                    "border-b border-muted/30 transition-colors",
+                    isATM ? "hover:bg-yellow-500/10" : "hover:bg-muted/10"
+                  )}>
                       {/* ── CALLS ── */}
                       {/* OI */}
                       <td className={cn("py-1.5 px-2 text-right tabular-nums", isCallITM ? "bg-blue-500/8" : "")}>
@@ -427,10 +428,10 @@ export default function OptionsChain() {
                           {isMaxPutOI && "★ "}{fmtOI(put.openInterest)}
                         </span>
                       </td>
-                    </tr>
-                  </tbody>
+                  </tr>
                 );
               })}
+              </tbody>
             </table>
           </div>
         </div>

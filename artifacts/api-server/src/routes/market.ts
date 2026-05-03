@@ -376,7 +376,7 @@ router.get("/market/futures", async (req, res) => {
       : futuresSymbols;
 
     const expiry = new Date();
-    expiry.setDate(expiry.getDate() + (4 - expiry.getDay() + 7) % 7); // Next Thursday
+    expiry.setDate(expiry.getDate() + ((4 - expiry.getDay() + 7) % 7 || 7)); // Next Thursday
 
     const results = await Promise.all(
       filtered.map(async (f) => {

@@ -186,13 +186,13 @@ export default function Dashboard() {
                   </div>
                   <div className="text-right flex items-center gap-6">
                     <div className="text-xs font-mono text-muted-foreground">
-                      ENTRY: {signal.entryPrice || '-'}
+                      ENTRY: {signal.entryPrice ?? '-'}
                     </div>
                     <div className="text-xs font-mono text-muted-foreground">
-                      TARGET: <span className="text-success">{signal.targetPrice || '-'}</span>
+                      TARGET: <span className="text-success">{signal.targetPrice ?? '-'}</span>
                     </div>
                     <div className="text-xs font-mono text-muted-foreground">
-                      SL: <span className="text-destructive">{signal.stopLoss || '-'}</span>
+                      SL: <span className="text-destructive">{signal.stopLoss ?? '-'}</span>
                     </div>
                   </div>
                 </div>

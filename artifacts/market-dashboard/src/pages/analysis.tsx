@@ -3,7 +3,6 @@ import {
   useGetTechnicalAnalysis, 
   getGetTechnicalAnalysisQueryKey,
   useRunAgentAnalysis,
-  useGetWatchlist,
   GetTechnicalAnalysisInterval
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

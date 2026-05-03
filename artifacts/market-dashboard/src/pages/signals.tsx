@@ -156,15 +156,15 @@ export default function SignalsBoard() {
                   <div className="grid grid-cols-3 gap-6 bg-muted/20 p-4 rounded-sm border border-muted">
                     <div>
                       <div className="text-xs text-muted-foreground font-mono mb-1">ENTRY</div>
-                      <div className="font-mono font-bold">{signal.entryPrice || '-'}</div>
+                      <div className="font-mono font-bold">{signal.entryPrice ?? '-'}</div>
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground font-mono mb-1">TARGET</div>
-                      <div className="font-mono font-bold text-success">{signal.targetPrice || '-'}</div>
+                      <div className="font-mono font-bold text-success">{signal.targetPrice ?? '-'}</div>
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground font-mono mb-1">STOP LOSS</div>
-                      <div className="font-mono font-bold text-destructive">{signal.stopLoss || '-'}</div>
+                      <div className="font-mono font-bold text-destructive">{signal.stopLoss ?? '-'}</div>
                     </div>
                   </div>
                 </div>
