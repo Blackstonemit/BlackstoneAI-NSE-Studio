@@ -536,8 +536,10 @@ export default function OptionsChain() {
                   </tr>
                 </thead>
                 <tbody>
-                  {chainData.calls.map((call, i) => {
-                    const put = chainData.puts[i] as NseContract | undefined;
+                  {(() => {
+                    const putsByStrikeLive = new Map(chainData.puts.map((p) => [p.strikePrice, p as NseContract]));
+                    return chainData.calls.map((call, i) => {
+                    const put = putsByStrikeLive.get(call.strikePrice);
                     if (!put) return null;
                     const isATM = i === atmIndex;
                     const isCallITM = call.strikePrice < chainData.underlyingPrice;
@@ -574,7 +576,8 @@ export default function OptionsChain() {
                         </td>
                       </tr>
                     );
-                  })}
+                  });
+                  })()}
                 </tbody>
               </table>
             </div>
