@@ -150,7 +150,8 @@ export default function OptionsChain() {
 
   const queryParams = useMemo(() => ({ symbol, expiry: expiry || undefined }), [symbol, expiry]);
   const { data: rawData, isLoading, isError } = useGetOptionsChain(queryParams, {
-    query: { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    query: { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false } as any,
   });
   const chainData = rawData as ChainData | undefined;
 

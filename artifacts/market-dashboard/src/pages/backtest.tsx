@@ -105,7 +105,8 @@ export default function BacktestPage() {
 
   const { data: history, isLoading, isError } = useGetMarketHistory(
     { symbol: yahooSymbol, period, interval: "1d" },
-    { query: { enabled, staleTime: 60000 } }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    { query: { enabled, staleTime: 60000 } as any }
   );
 
   const results = useMemo(() => {

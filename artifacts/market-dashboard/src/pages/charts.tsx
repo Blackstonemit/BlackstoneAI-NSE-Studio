@@ -201,7 +201,8 @@ export default function ChartsPage() {
 
   const { data: history, isLoading, isError, refetch } = useGetMarketHistory(
     { symbol: apiSymbol, interval: intervalCfg.apiInterval, period: intervalCfg.apiPeriod },
-    { query: { staleTime: 60_000 } }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    { query: { staleTime: 60_000 } as any }
   );
 
   // ── DOM refs ──────────────────────────────────────────────────────────────
@@ -285,12 +286,12 @@ export default function ChartsPage() {
       });
       cs.setData(processed.ohlc);
     } else if (chartStyle === "line") {
-      const ls = mc.addSeries(LineSeries, { color: C.up, lineWidth: 1.5 });
+      const ls = mc.addSeries(LineSeries, { color: C.up, lineWidth: 2 });
       ls.setData(processed.ohlc.map((d) => ({ time: d.time, value: d.close })));
     } else {
       const as = mc.addSeries(AreaSeries, {
         lineColor: C.up, topColor: "rgba(34,197,94,0.25)",
-        bottomColor: "rgba(34,197,94,0.02)", lineWidth: 1.5,
+        bottomColor: "rgba(34,197,94,0.02)", lineWidth: 2,
       });
       as.setData(processed.ohlc.map((d) => ({ time: d.time, value: d.close })));
     }
@@ -336,7 +337,7 @@ export default function ChartsPage() {
       });
       rsiChart.current = rc;
 
-      const rs = rc.addSeries(LineSeries, { color: C.rsi, lineWidth: 1.5, title: "RSI 14" });
+      const rs = rc.addSeries(LineSeries, { color: C.rsi, lineWidth: 2, title: "RSI 14" });
       rs.setData(processed.rsiData);
 
       // OB/OS bands
