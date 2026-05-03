@@ -151,7 +151,10 @@ function AIProvidersCard() {
                   </div>
 
                   {!isNvidia && (
-                    <div className="flex items-center gap-2 pt-1">
+                    <form
+                      className="flex items-center gap-2 pt-1"
+                      onSubmit={(e) => { e.preventDefault(); handleSaveKey(p.provider as "openai" | "claude" | "gemini"); }}
+                    >
                       <div className="relative flex-1">
                         <Input
                           type={showKey[p.provider] ? "text" : "password"}
@@ -159,6 +162,7 @@ function AIProvidersCard() {
                           onChange={(e) => setKeyInputs((prev) => ({ ...prev, [p.provider]: e.target.value }))}
                           placeholder={p.configured ? "Enter new key to update…" : meta.keyHint}
                           className="font-mono text-xs bg-background border-muted pr-8 h-8"
+                          autoComplete="off"
                         />
                         <button
                           type="button"
@@ -169,6 +173,7 @@ function AIProvidersCard() {
                         </button>
                       </div>
                       <Button
+                        type="button"
                         size="sm"
                         variant="outline"
                         onClick={() => handleOpenKeyPage(p.provider)}
@@ -179,14 +184,14 @@ function AIProvidersCard() {
                         GET KEY
                       </Button>
                       <Button
+                        type="submit"
                         size="sm"
                         disabled={!keyInputs[p.provider] || saving[p.provider]}
-                        onClick={() => handleSaveKey(p.provider as "openai" | "gemini")}
                         className="font-mono text-xs h-8 shrink-0"
                       >
                         {saving[p.provider] ? <Loader2 className="h-3 w-3 animate-spin" /> : "SAVE"}
                       </Button>
-                    </div>
+                    </form>
                   )}
 
                   {isNvidia && (
