@@ -11,7 +11,7 @@ import { Settings2, RefreshCw, BarChart2, Eye, Save, RotateCcw, BrainCircuit, Sl
 import { cn } from "@/lib/utils";
 
 type ProviderStatus = {
-  provider: "nvidia" | "openai" | "gemini";
+  provider: "nvidia" | "openai" | "claude" | "gemini";
   configured: boolean;
   enabled: boolean;
   isDefault: boolean;
@@ -31,6 +31,13 @@ const PROVIDER_META: Record<string, { label: string; color: string; keyUrl: stri
     keyUrl: "https://platform.openai.com/api-keys",
     keyHint: "sk-...",
     model: "GPT-4o Mini",
+  },
+  claude: {
+    label: "Anthropic Claude",
+    color: "text-orange-400",
+    keyUrl: "https://console.anthropic.com/settings/keys",
+    keyHint: "sk-ant-...",
+    model: "Claude 3.5 Haiku",
   },
   gemini: {
     label: "Google Gemini",
@@ -63,7 +70,7 @@ function AIProvidersCard() {
 
   useEffect(() => { void fetchStatus(); }, []);
 
-  const handleSaveKey = async (provider: "openai" | "gemini") => {
+  const handleSaveKey = async (provider: "openai" | "claude" | "gemini") => {
     const key = keyInputs[provider]?.trim();
     if (!key || key.length < 8) {
       toast({ title: "Invalid Key", description: "Please enter a valid API key.", variant: "destructive" });

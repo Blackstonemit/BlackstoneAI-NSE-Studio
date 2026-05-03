@@ -3,6 +3,13 @@ import { getProvidersStatus, saveProviderKey, toggleProvider } from "../lib/mult
 
 const router: IRouter = Router();
 
+const DB_PROVIDERS = ["openai", "claude", "gemini"] as const;
+type DbProvider = (typeof DB_PROVIDERS)[number];
+
+function isDbProvider(p: string): p is DbProvider {
+  return (DB_PROVIDERS as readonly string[]).includes(p);
+}
+
 router.get("/ai-providers/status", async (req, res) => {
   try {
     const status = await getProvidersStatus();
@@ -16,8 +23,8 @@ router.get("/ai-providers/status", async (req, res) => {
 router.post("/ai-providers/:provider/key", async (req, res) => {
   try {
     const { provider } = req.params;
-    if (provider !== "openai" && provider !== "gemini") {
-      res.status(400).json({ error: "Invalid provider. Must be openai or gemini." });
+    if (!isDbProvider(provider)) {
+      res.status(400).json({ error: "Invalid provider. Must be openai, claude, or gemini." });
       return;
     }
     const { apiKey } = req.body as { apiKey?: string };
@@ -36,7 +43,7 @@ router.post("/ai-providers/:provider/key", async (req, res) => {
 router.patch("/ai-providers/:provider/toggle", async (req, res) => {
   try {
     const { provider } = req.params;
-    if (provider !== "openai" && provider !== "gemini") {
+    if (!isDbProvider(provider)) {
       res.status(400).json({ error: "Invalid provider" });
       return;
     }

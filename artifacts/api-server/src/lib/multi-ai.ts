@@ -1,9 +1,10 @@
 import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 import { db, providerSettings } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "./logger";
 
-export type AIProvider = "nvidia" | "openai" | "gemini";
+export type AIProvider = "nvidia" | "openai" | "gemini" | "claude";
 
 export type AIMessage = { role: "system" | "user" | "assistant"; content: string };
 
@@ -19,9 +20,10 @@ const PROVIDER_MODELS: Record<AIProvider, string> = {
   nvidia: process.env["NVIDIA_MODEL"] ?? "qwen/qwen3.5-122b-a10b",
   openai: "gpt-4o-mini",
   gemini: "gemini-1.5-flash",
+  claude: "claude-3-5-haiku-20241022",
 };
 
-function makeClient(provider: AIProvider, apiKey: string): OpenAI {
+function makeOpenAIClient(provider: Exclude<AIProvider, "claude">, apiKey: string): OpenAI {
   if (provider === "nvidia") {
     return new OpenAI({ apiKey, baseURL: NVIDIA_BASE_URL });
   }
@@ -47,11 +49,36 @@ async function getProviderKey(provider: AIProvider): Promise<string | null> {
   }
 }
 
+async function callClaude(
+  apiKey: string,
+  messages: AIMessage[],
+  maxTokens: number
+): Promise<string> {
+  const client = new Anthropic({ apiKey });
+
+  const systemMsg = messages.find((m) => m.role === "system")?.content ?? "";
+  const chatMessages = messages
+    .filter((m) => m.role !== "system")
+    .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+
+  const response = await client.messages.create({
+    model: PROVIDER_MODELS.claude,
+    max_tokens: maxTokens,
+    system: systemMsg || undefined,
+    messages: chatMessages,
+  });
+
+  const block = response.content[0];
+  if (!block || block.type !== "text") throw new Error("Empty Claude response");
+  return block.text.trim();
+}
+
 export async function callWithFallback(
   messages: AIMessage[],
   options: { maxTokens?: number } = {}
 ): Promise<AICompletionResult> {
-  const order: AIProvider[] = ["nvidia", "openai", "gemini"];
+  const order: AIProvider[] = ["nvidia", "openai", "claude", "gemini"];
+  const maxTokens = options.maxTokens ?? 2048;
 
   for (const provider of order) {
     const apiKey = await getProviderKey(provider);
@@ -61,19 +88,23 @@ export async function callWithFallback(
     }
 
     try {
-      const client = makeClient(provider, apiKey);
-      const model = PROVIDER_MODELS[provider];
+      let content: string;
 
-      const response = await client.chat.completions.create({
-        model,
-        max_tokens: options.maxTokens ?? 2048,
-        messages: messages as Parameters<typeof client.chat.completions.create>[0]["messages"],
-      });
+      if (provider === "claude") {
+        content = await callClaude(apiKey, messages, maxTokens);
+      } else {
+        const client = makeOpenAIClient(provider, apiKey);
+        const model = PROVIDER_MODELS[provider];
+        const response = await client.chat.completions.create({
+          model,
+          max_tokens: maxTokens,
+          messages: messages as Parameters<typeof client.chat.completions.create>[0]["messages"],
+        });
+        content = response.choices[0]?.message?.content?.trim() ?? "";
+        if (!content) throw new Error("Empty response");
+      }
 
-      const content = response.choices[0]?.message?.content?.trim() ?? "";
-      if (!content) throw new Error("Empty response");
-
-      logger.info({ provider, model }, "AI call succeeded");
+      logger.info({ provider, model: PROVIDER_MODELS[provider] }, "AI call succeeded");
       return { content, provider };
     } catch (err) {
       logger.warn({ err, provider }, "AI provider failed, trying next");
@@ -90,7 +121,7 @@ export async function getProvidersStatus(): Promise<
   const dbMap = new Map(dbRows.map((r) => [r.provider, r]));
 
   const nvidiaKey = process.env["NVIDIA_API_KEY"];
-  const providers: AIProvider[] = ["nvidia", "openai", "gemini"];
+  const providers: AIProvider[] = ["nvidia", "openai", "claude", "gemini"];
 
   return providers.map((p, idx) => {
     if (p === "nvidia") {
@@ -107,7 +138,7 @@ export async function getProvidersStatus(): Promise<
 }
 
 export async function saveProviderKey(
-  provider: "openai" | "gemini",
+  provider: "openai" | "gemini" | "claude",
   apiKey: string
 ): Promise<void> {
   await db
@@ -120,7 +151,7 @@ export async function saveProviderKey(
 }
 
 export async function toggleProvider(
-  provider: "openai" | "gemini",
+  provider: "openai" | "gemini" | "claude",
   enabled: boolean
 ): Promise<void> {
   await db
