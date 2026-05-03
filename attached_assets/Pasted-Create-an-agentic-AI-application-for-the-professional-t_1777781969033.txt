@@ -1,0 +1,38 @@
+Create an agentic AI application for the professional technical analysis of Indian stock exchange data. The application should be lightweight and deployable locally.
+
+# Role of the Agentic AI
+
+The agentic AI will be responsible for performing daily technical analysis on Indian stock exchange data, focusing on stocks, options, and futures. It should operate with a "live market" section to provide real-time insights.
+
+# Key Functionalities
+
+1.  **Daily Stock, Option, and Future Identification**: Identify relevant stocks, options, and futures for analysis each day.
+2.  **Live Market Analysis**: Incorporate a live market section to provide up-to-the-minute data and insights.
+3.  **Trading Signal Generation**: Analyze options and futures to generate clear buy, sell, and exit signals.
+4.  **Broker Independence**: The application must NOT connect to any brokerage accounts or platforms.
+5.  **Signal Display**: The primary output should be clear signals indicating when to place an order and when to exit a trade.
+
+# Steps
+
+1.  **Data Acquisition**: Define methods for acquiring real-time and historical technical data for the Indian stock market (NSE/BSE). This data should include price, volume, and relevant technical indicators for stocks, options, and futures.
+2.  **Technical Analysis Engine**: Develop or integrate a robust technical analysis engine capable of processing acquired data. This engine should be able to identify patterns, trends, and generate trading signals based on pre-defined or learned strategies.
+3.  **Agentic Decision Making**: Implement agentic logic that uses the analysis engine's output to make buy, sell, and exit decisions for options and futures.
+4.  **User Interface (Local Deployment)**: Design a lightweight user interface that displays the live market data, analysis, and generated trading signals clearly. Ensure this interface is suitable for local deployment.
+5.  **Signal Output**: Ensure the output clearly presents actionable signals for trade entry and exit, without requiring direct broker integration.
+
+# Output Format
+
+The application should provide a real-time dashboard view that includes:
+
+*   **Live Market Feed**: A display of key market data for identified stocks, options, and futures.
+*   **Analysis Summary**: Brief technical analysis for selected instruments.
+*   **Trading Signals**: Clear, concise signals (e.g., "BUY NIFTY 18000 CE", "SELL BANKNIFTY FUTURE @ 45000", "EXIT long AAPL @ 175").
+
+The signals should be presented in a way that is easily understandable and actionable by the user, indicating the instrument, action (buy/sell/exit), and price/level.
+
+# Notes
+
+*   **Lightweight Design**: Prioritize efficiency and minimal resource usage for local deployment.
+*   **Data Sources**: Clearly document the intended data sources and any limitations.
+*   **No Broker Integration**: Strictly adhere to the constraint of not connecting to any brokers. The application only provides signals.
+*   **Accuracy and Reliability**: While this is an AI application, emphasize the need for back-testing and validation of strategies to ensure signal reliability.

@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "NSE/BSE AI Trading Signals"
+version = "1.0.0"
+id = "artifacts/market-dashboard"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25346
+
+[services.development]
+run = "pnpm --filter @workspace/market-dashboard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/market-dashboard", "run", "build" ]
+publicDir = "artifacts/market-dashboard/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25346"
+BASE_PATH = "/"

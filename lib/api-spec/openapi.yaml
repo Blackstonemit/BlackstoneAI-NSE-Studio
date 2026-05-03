@@ -3,20 +3,30 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: NSE/BSE AI Trading Signals API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: market
+    description: Market data for NSE/BSE stocks, options, futures
+  - name: signals
+    description: AI-generated trading signals
+  - name: analysis
+    description: Technical analysis engine
+  - name: watchlist
+    description: User watchlist management
+  - name: openai
+    description: OpenAI AI agent operations
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +34,320 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /market/quotes:
+    get:
+      operationId: getMarketQuotes
+      tags: [market]
+      summary: Get live quotes for a list of symbols
+      parameters:
+        - name: symbols
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Comma-separated NSE symbols e.g. RELIANCE,NIFTY50,BANKNIFTY
+        - name: exchange
+          in: query
+          schema:
+            type: string
+            enum: [NSE, BSE]
+            default: NSE
+      responses:
+        "200":
+          description: Live quotes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Quote"
+
+  /market/indices:
+    get:
+      operationId: getMarketIndices
+      tags: [market]
+      summary: Get major Indian market indices
+      responses:
+        "200":
+          description: Indices data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IndexData"
+
+  /market/options-chain:
+    get:
+      operationId: getOptionsChain
+      tags: [market]
+      summary: Get options chain for a symbol
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Underlying symbol e.g. NIFTY, BANKNIFTY, RELIANCE
+        - name: expiry
+          in: query
+          schema:
+            type: string
+          description: Expiry date ISO string; defaults to nearest expiry
+      responses:
+        "200":
+          description: Options chain
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptionsChain"
+
+  /market/futures:
+    get:
+      operationId: getFutures
+      tags: [market]
+      summary: Get futures data for major instruments
+      parameters:
+        - name: symbol
+          in: query
+          schema:
+            type: string
+          description: Symbol filter; omit for all tracked futures
+      responses:
+        "200":
+          description: Futures data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FuturesData"
+
+  /market/history:
+    get:
+      operationId: getMarketHistory
+      tags: [market]
+      summary: Get historical OHLCV data for technical analysis
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: interval
+          in: query
+          schema:
+            type: string
+            enum: ["1m", "5m", "15m", "1h", "1d"]
+            default: "1d"
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: ["1d", "5d", "1mo", "3mo", "6mo", "1y"]
+            default: "3mo"
+      responses:
+        "200":
+          description: OHLCV history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PriceHistory"
+
+  /market/movers:
+    get:
+      operationId: getMarketMovers
+      tags: [market]
+      summary: Get top gainers, losers, and most active stocks
+      responses:
+        "200":
+          description: Market movers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketMovers"
+
+  /analysis/technical:
+    get:
+      operationId: getTechnicalAnalysis
+      tags: [analysis]
+      summary: Get technical indicators for a symbol
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: interval
+          in: query
+          schema:
+            type: string
+            enum: ["5m", "15m", "1h", "1d"]
+            default: "1d"
+      responses:
+        "200":
+          description: Technical analysis results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TechnicalAnalysis"
+
+  /analysis/summary:
+    get:
+      operationId: getAnalysisSummary
+      tags: [analysis]
+      summary: Get a summary of technical analysis across all watchlist symbols
+      responses:
+        "200":
+          description: Analysis summary across symbols
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisSummary"
+
+  /signals:
+    get:
+      operationId: getSignals
+      tags: [signals]
+      summary: Get all current AI trading signals
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [STOCK, OPTIONS, FUTURES, ALL]
+            default: ALL
+        - name: action
+          in: query
+          schema:
+            type: string
+            enum: [BUY, SELL, EXIT, ALL]
+            default: ALL
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, TRIGGERED, EXPIRED, ALL]
+            default: ACTIVE
+      responses:
+        "200":
+          description: Trading signals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TradingSignal"
+
+  /signals/{id}:
+    get:
+      operationId: getSignal
+      tags: [signals]
+      summary: Get a specific signal by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Signal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TradingSignal"
+        "404":
+          description: Not found
+
+  /signals/generate:
+    post:
+      operationId: generateSignals
+      tags: [signals]
+      summary: Trigger AI agent to generate new trading signals
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateSignalsInput"
+      responses:
+        "200":
+          description: Newly generated signals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TradingSignal"
+
+  /watchlist:
+    get:
+      operationId: getWatchlist
+      tags: [watchlist]
+      summary: Get the current watchlist
+      responses:
+        "200":
+          description: Watchlist items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WatchlistItem"
+    post:
+      operationId: addToWatchlist
+      tags: [watchlist]
+      summary: Add a symbol to the watchlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddWatchlistBody"
+      responses:
+        "201":
+          description: Added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistItem"
+
+  /watchlist/{id}:
+    delete:
+      operationId: removeFromWatchlist
+      tags: [watchlist]
+      summary: Remove a symbol from the watchlist
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
+  /openai/agent/analyze:
+    post:
+      operationId: runAgentAnalysis
+      tags: [openai]
+      summary: Run the AI agent to analyze a symbol and produce a detailed report with signals
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunAgentAnalysisInput"
+      responses:
+        "200":
+          description: AI analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentAnalysisResult"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +355,425 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    Quote:
+      type: object
+      properties:
+        symbol:
+          type: string
+        name:
+          type: string
+        exchange:
+          type: string
+        price:
+          type: number
+        change:
+          type: number
+        changePercent:
+          type: number
+        volume:
+          type: number
+        open:
+          type: number
+        high:
+          type: number
+        low:
+          type: number
+        previousClose:
+          type: number
+        marketCap:
+          type: number
+          nullable: true
+        timestamp:
+          type: string
+      required: [symbol, name, exchange, price, change, changePercent, volume, open, high, low, previousClose, timestamp]
+
+    IndexData:
+      type: object
+      properties:
+        symbol:
+          type: string
+        name:
+          type: string
+        value:
+          type: number
+        change:
+          type: number
+        changePercent:
+          type: number
+        high:
+          type: number
+        low:
+          type: number
+        timestamp:
+          type: string
+      required: [symbol, name, value, change, changePercent, high, low, timestamp]
+
+    OptionsChain:
+      type: object
+      properties:
+        symbol:
+          type: string
+        underlyingPrice:
+          type: number
+        expiries:
+          type: array
+          items:
+            type: string
+        selectedExpiry:
+          type: string
+        calls:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptionContract"
+        puts:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptionContract"
+      required: [symbol, underlyingPrice, expiries, selectedExpiry, calls, puts]
+
+    OptionContract:
+      type: object
+      properties:
+        strikePrice:
+          type: number
+        expiry:
+          type: string
+        type:
+          type: string
+          enum: [CE, PE]
+        ltp:
+          type: number
+        change:
+          type: number
+        changePercent:
+          type: number
+        volume:
+          type: number
+        openInterest:
+          type: number
+        impliedVolatility:
+          type: number
+        delta:
+          type: number
+          nullable: true
+        theta:
+          type: number
+          nullable: true
+      required: [strikePrice, expiry, type, ltp, change, changePercent, volume, openInterest, impliedVolatility]
+
+    FuturesData:
+      type: object
+      properties:
+        symbol:
+          type: string
+        name:
+          type: string
+        expiry:
+          type: string
+        ltp:
+          type: number
+        change:
+          type: number
+        changePercent:
+          type: number
+        volume:
+          type: number
+        openInterest:
+          type: number
+        basis:
+          type: number
+      required: [symbol, name, expiry, ltp, change, changePercent, volume, openInterest, basis]
+
+    PriceHistory:
+      type: object
+      properties:
+        symbol:
+          type: string
+        interval:
+          type: string
+        candles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Candle"
+      required: [symbol, interval, candles]
+
+    Candle:
+      type: object
+      properties:
+        timestamp:
+          type: string
+        open:
+          type: number
+        high:
+          type: number
+        low:
+          type: number
+        close:
+          type: number
+        volume:
+          type: number
+      required: [timestamp, open, high, low, close, volume]
+
+    MarketMovers:
+      type: object
+      properties:
+        gainers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Quote"
+        losers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Quote"
+        mostActive:
+          type: array
+          items:
+            $ref: "#/components/schemas/Quote"
+      required: [gainers, losers, mostActive]
+
+    TechnicalAnalysis:
+      type: object
+      properties:
+        symbol:
+          type: string
+        interval:
+          type: string
+        timestamp:
+          type: string
+        rsi:
+          type: number
+          nullable: true
+        macd:
+          $ref: "#/components/schemas/MACDValues"
+          nullable: true
+        bollingerBands:
+          $ref: "#/components/schemas/BollingerBands"
+          nullable: true
+        sma20:
+          type: number
+          nullable: true
+        sma50:
+          type: number
+          nullable: true
+        sma200:
+          type: number
+          nullable: true
+        ema9:
+          type: number
+          nullable: true
+        ema21:
+          type: number
+          nullable: true
+        atr:
+          type: number
+          nullable: true
+        stochastic:
+          $ref: "#/components/schemas/StochasticValues"
+          nullable: true
+        trend:
+          type: string
+          enum: [STRONG_BULLISH, BULLISH, NEUTRAL, BEARISH, STRONG_BEARISH]
+        overallSignal:
+          type: string
+          enum: [BUY, SELL, HOLD]
+        signalStrength:
+          type: number
+          description: 0-100 confidence score
+      required: [symbol, interval, timestamp, trend, overallSignal, signalStrength]
+
+    MACDValues:
+      type: object
+      properties:
+        macd:
+          type: number
+        signal:
+          type: number
+        histogram:
+          type: number
+      required: [macd, signal, histogram]
+
+    BollingerBands:
+      type: object
+      properties:
+        upper:
+          type: number
+        middle:
+          type: number
+        lower:
+          type: number
+      required: [upper, middle, lower]
+
+    StochasticValues:
+      type: object
+      properties:
+        k:
+          type: number
+        d:
+          type: number
+      required: [k, d]
+
+    AnalysisSummary:
+      type: object
+      properties:
+        totalSymbols:
+          type: integer
+        bullish:
+          type: integer
+        bearish:
+          type: integer
+        neutral:
+          type: integer
+        strongBuy:
+          type: integer
+        strongSell:
+          type: integer
+        topBuySignals:
+          type: array
+          items:
+            type: string
+        topSellSignals:
+          type: array
+          items:
+            type: string
+        updatedAt:
+          type: string
+      required: [totalSymbols, bullish, bearish, neutral, strongBuy, strongSell, topBuySignals, topSellSignals, updatedAt]
+
+    TradingSignal:
+      type: object
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        instrumentType:
+          type: string
+          enum: [STOCK, OPTIONS, FUTURES]
+        action:
+          type: string
+          enum: [BUY, SELL, EXIT]
+        displayText:
+          type: string
+          description: Human-readable signal e.g. "BUY NIFTY 22000 CE"
+        entryPrice:
+          type: number
+          nullable: true
+        targetPrice:
+          type: number
+          nullable: true
+        stopLoss:
+          type: number
+          nullable: true
+        confidence:
+          type: number
+          description: 0-100
+        rationale:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, TRIGGERED, EXPIRED]
+        timeframe:
+          type: string
+          enum: [INTRADAY, SWING, POSITIONAL]
+        createdAt:
+          type: string
+        expiresAt:
+          type: string
+          nullable: true
+      required: [id, symbol, instrumentType, action, displayText, confidence, rationale, status, timeframe, createdAt]
+
+    GenerateSignalsInput:
+      type: object
+      properties:
+        symbols:
+          type: array
+          items:
+            type: string
+          description: List of symbols to analyze; empty means use watchlist
+        timeframe:
+          type: string
+          enum: [INTRADAY, SWING, POSITIONAL]
+          default: INTRADAY
+      required: []
+
+    WatchlistItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        name:
+          type: string
+        exchange:
+          type: string
+          enum: [NSE, BSE]
+        instrumentType:
+          type: string
+          enum: [STOCK, INDEX, OPTIONS, FUTURES]
+        addedAt:
+          type: string
+      required: [id, symbol, name, exchange, instrumentType, addedAt]
+
+    AddWatchlistBody:
+      type: object
+      properties:
+        symbol:
+          type: string
+        name:
+          type: string
+        exchange:
+          type: string
+          enum: [NSE, BSE]
+          default: NSE
+        instrumentType:
+          type: string
+          enum: [STOCK, INDEX, OPTIONS, FUTURES]
+          default: STOCK
+      required: [symbol, name]
+
+    RunAgentAnalysisInput:
+      type: object
+      properties:
+        symbol:
+          type: string
+        instrumentType:
+          type: string
+          enum: [STOCK, OPTIONS, FUTURES]
+          default: STOCK
+        timeframe:
+          type: string
+          enum: [INTRADAY, SWING, POSITIONAL]
+          default: INTRADAY
+      required: [symbol]
+
+    AgentAnalysisResult:
+      type: object
+      properties:
+        symbol:
+          type: string
+        summary:
+          type: string
+        keyLevels:
+          type: object
+          properties:
+            support:
+              type: array
+              items:
+                type: number
+            resistance:
+              type: array
+              items:
+                type: number
+          required: [support, resistance]
+        signals:
+          type: array
+          items:
+            $ref: "#/components/schemas/TradingSignal"
+        riskAssessment:
+          type: string
+        generatedAt:
+          type: string
+      required: [symbol, summary, keyLevels, signals, riskAssessment, generatedAt]
