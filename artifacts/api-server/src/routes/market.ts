@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
-import yahooFinance from "yahoo-finance2";
+import YahooFinanceClass from "yahoo-finance2";
+const yahooFinance = new (YahooFinanceClass as any)();
 import {
   GetMarketQuotesQueryParams,
   GetMarketHistoryQueryParams,
@@ -54,17 +55,18 @@ router.get("/market/quotes", async (req, res) => {
       yahooSymbols.map(async (ySym, i) => {
         try {
           const q = await yahooFinance.quote(ySym);
+          const price = q.regularMarketPrice ?? q.regularMarketPreviousClose ?? 0;
           return {
             symbol: symbols[i],
             name: q.longName || q.shortName || symbols[i],
             exchange: query.exchange,
-            price: q.regularMarketPrice ?? 0,
+            price,
             change: q.regularMarketChange ?? 0,
             changePercent: q.regularMarketChangePercent ?? 0,
             volume: q.regularMarketVolume ?? 0,
-            open: q.regularMarketOpen ?? 0,
-            high: q.regularMarketDayHigh ?? 0,
-            low: q.regularMarketDayLow ?? 0,
+            open: q.regularMarketOpen ?? price,
+            high: q.regularMarketDayHigh ?? price,
+            low: q.regularMarketDayLow ?? price,
             previousClose: q.regularMarketPreviousClose ?? 0,
             marketCap: q.marketCap ?? null,
             timestamp: new Date().toISOString(),
@@ -88,14 +90,15 @@ router.get("/market/indices", async (req, res) => {
       INDICES.map(async (idx) => {
         try {
           const q = await yahooFinance.quote(idx.yahooSymbol);
+          const price = q.regularMarketPrice ?? q.regularMarketPreviousClose ?? 0;
           return {
             symbol: idx.symbol,
             name: idx.name,
-            value: q.regularMarketPrice ?? 0,
+            value: price,
             change: q.regularMarketChange ?? 0,
             changePercent: q.regularMarketChangePercent ?? 0,
-            high: q.regularMarketDayHigh ?? 0,
-            low: q.regularMarketDayLow ?? 0,
+            high: q.regularMarketDayHigh ?? price,
+            low: q.regularMarketDayLow ?? price,
             timestamp: new Date().toISOString(),
           };
         } catch {
@@ -355,17 +358,18 @@ router.get("/market/movers", async (req, res) => {
         try {
           const q = await yahooFinance.quote(sym);
           const symbol = sym.replace(/\.(NS|BO)$/, "");
+          const price = q.regularMarketPrice ?? q.regularMarketPreviousClose ?? 0;
           return {
             symbol,
             name: q.longName || q.shortName || symbol,
             exchange: sym.endsWith(".BO") ? "BSE" : "NSE",
-            price: q.regularMarketPrice ?? 0,
+            price,
             change: q.regularMarketChange ?? 0,
             changePercent: q.regularMarketChangePercent ?? 0,
             volume: q.regularMarketVolume ?? 0,
-            open: q.regularMarketOpen ?? 0,
-            high: q.regularMarketDayHigh ?? 0,
-            low: q.regularMarketDayLow ?? 0,
+            open: q.regularMarketOpen ?? price,
+            high: q.regularMarketDayHigh ?? price,
+            low: q.regularMarketDayLow ?? price,
             previousClose: q.regularMarketPreviousClose ?? 0,
             marketCap: q.marketCap ?? null,
             timestamp: new Date().toISOString(),

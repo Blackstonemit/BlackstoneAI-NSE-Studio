@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
-import yahooFinance from "yahoo-finance2";
+import YahooFinanceClass from "yahoo-finance2";
+const yahooFinance = new (YahooFinanceClass as any)();
 import {
   RSI,
   MACD,

@@ -23,9 +23,9 @@ export default function AnalysisBoard() {
   
   const { toast } = useToast();
 
-  const { data: analysis, isLoading: loadingAnalysis } = useGetTechnicalAnalysis(
+  const { data: analysis, isLoading: loadingAnalysis, isError: analysisError } = useGetTechnicalAnalysis(
     { symbol, interval },
-    { query: { queryKey: getGetTechnicalAnalysisQueryKey({ symbol, interval }) } }
+    { query: { queryKey: getGetTechnicalAnalysisQueryKey({ symbol, interval }), retry: 1 } }
   );
 
   const runAgent = useRunAgentAnalysis();
@@ -101,9 +101,12 @@ export default function AnalysisBoard() {
           <Skeleton className="h-64 w-full" />
           <Skeleton className="h-64 w-full" />
         </div>
-      ) : !analysis ? (
+      ) : analysisError || !analysis ? (
         <div className="py-20 text-center border border-muted border-dashed rounded-sm bg-card">
           <h3 className="text-lg font-mono font-bold text-muted-foreground">NO DATA FOUND FOR {symbol}</h3>
+          <p className="text-sm text-muted-foreground mt-2">
+            {analysisError ? "Could not fetch market data. Markets may be closed or the symbol is invalid." : "Enter a valid NSE symbol and press Enter."}
+          </p>
         </div>
       ) : (
         <div className="space-y-6">

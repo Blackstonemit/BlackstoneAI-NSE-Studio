@@ -76,7 +76,11 @@ export default function MarketFeed() {
                 </div>
               </TableCell>
               <TableCell className="text-right font-mono text-muted-foreground">
-                {(q.volume / 100000).toFixed(1)}M
+                {q.volume >= 1000000
+                  ? `${(q.volume / 1000000).toFixed(2)}M`
+                  : q.volume >= 1000
+                    ? `${(q.volume / 1000).toFixed(1)}K`
+                    : q.volume}
               </TableCell>
             </TableRow>
           ))}

@@ -34,13 +34,26 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [queryClient]);
 
+  // Compute NSE market status based on IST (UTC+5:30)
+  const isMarketOpen = (() => {
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const ist = new Date(now.getTime() + istOffset);
+    const day = ist.getUTCDay(); // 0=Sun, 6=Sat
+    if (day === 0 || day === 6) return false;
+    const h = ist.getUTCHours();
+    const m = ist.getUTCMinutes();
+    const mins = h * 60 + m;
+    return mins >= 555 && mins < 930; // 9:15 AM to 3:30 PM IST
+  })();
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight font-mono">LIVE DASHBOARD</h1>
-        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
-          <Activity className="h-4 w-4 text-success animate-pulse" />
-          MARKET OPEN
+        <div className={`flex items-center gap-2 text-xs font-mono ${isMarketOpen ? "text-success" : "text-muted-foreground"}`}>
+          <Activity className={`h-4 w-4 ${isMarketOpen ? "text-success animate-pulse" : "text-muted-foreground"}`} />
+          {isMarketOpen ? "MARKET OPEN" : "MARKET CLOSED"}
         </div>
       </div>
 
