@@ -383,16 +383,20 @@ router.get("/market/futures", async (req, res) => {
         try {
           const q = await yahooFinance.quote(f.yahooSym);
           const spot = q.regularMarketPrice ?? 0;
-          const basis = spot * 0.001 * (Math.random() > 0.5 ? 1 : -1);
+          // Basis is simulated as a small contango (futures typically trade above spot)
+          const basisMagnitude = Math.round(spot * 0.001 * 100) / 100;
+          const basis = basisMagnitude;
+          // OI is simulated — no real futures OI data available from this source
+          const simulatedOI = 150000 + (f.symbol.charCodeAt(0) % 10) * 35000;
           return {
             symbol: f.symbol,
             name: f.name,
             expiry: expiry.toISOString(),
-            ltp: spot + basis,
+            ltp: Math.round((spot + basis) * 100) / 100,
             change: q.regularMarketChange ?? 0,
             changePercent: q.regularMarketChangePercent ?? 0,
             volume: Math.round((q.regularMarketVolume ?? 0) * 0.1),
-            openInterest: Math.round(100000 + Math.random() * 500000),
+            openInterest: simulatedOI,
             basis: Math.round(basis * 100) / 100,
           };
         } catch {

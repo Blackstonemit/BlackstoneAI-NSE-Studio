@@ -58,9 +58,12 @@ async function computeTechnicals(symbol: string, interval: string = "1d") {
     throw new Error("Insufficient data for analysis");
   }
 
-  const closes = quotes.map((q: any) => q.close ?? 0).filter((v: number) => v > 0);
-  const highs = quotes.map((q: any) => q.high ?? 0).filter((v: number) => v > 0);
-  const lows = quotes.map((q: any) => q.low ?? 0).filter((v: number) => v > 0);
+  const validQuotes = quotes.filter(
+    (q: any) => (q.close ?? 0) > 0 && (q.high ?? 0) > 0 && (q.low ?? 0) > 0
+  );
+  const closes = validQuotes.map((q: any) => q.close as number);
+  const highs = validQuotes.map((q: any) => q.high as number);
+  const lows = validQuotes.map((q: any) => q.low as number);
 
   // RSI (14)
   const rsiValues = RSI.calculate({ values: closes, period: 14 });

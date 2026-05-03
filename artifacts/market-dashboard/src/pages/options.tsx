@@ -248,8 +248,9 @@ export default function OptionsChain() {
       ? "Call OI,Call Chg OI,Call Vol,Call IV,Call Bid,Call Ask,Call LTP,Call Chg,Strike,Put Chg,Put LTP,Put Bid,Put Ask,Put IV,Put Vol,Put Chg OI,Put OI"
       : "Call OI,Call Vol,Call IV,Call LTP,Call Chg,Strike,Put Chg,Put LTP,Put IV,Put Vol,Put OI";
     const rows = [header];
-    chainData.calls.forEach((call, i) => {
-      const put = chainData.puts[i] as NseContract | undefined;
+    const putsByStrike = new Map(chainData.puts.map((p) => [p.strikePrice, p as NseContract]));
+    chainData.calls.forEach((call) => {
+      const put = putsByStrike.get(call.strikePrice);
       if (!put) return;
       if (isNSE) {
         rows.push([call.openInterest, (call as NseContract).changeInOI ?? 0, call.volume, call.impliedVolatility.toFixed(2), (call as NseContract).bid ?? 0, (call as NseContract).ask ?? 0, call.ltp.toFixed(2), call.change.toFixed(2), call.strikePrice, put.change.toFixed(2), put.ltp.toFixed(2), (put as NseContract).bid ?? 0, (put as NseContract).ask ?? 0, put.impliedVolatility.toFixed(2), put.volume, (put as NseContract).changeInOI ?? 0, put.openInterest].join(","));
@@ -418,8 +419,9 @@ export default function OptionsChain() {
                       <tbody>
                         {(() => {
                           const csvMap = new Map(csvRows.map((r) => [r.strike, r]));
+                          const putsByStrikeCompare = new Map(chainData.puts.map((p) => [p.strikePrice, p]));
                           return chainData.calls.map((call, i) => {
-                            const put = chainData.puts[i];
+                            const put = putsByStrikeCompare.get(call.strikePrice);
                             const csv = csvMap.get(call.strikePrice);
                             const isATM = i === atmIndex;
                             if (!put) return null;

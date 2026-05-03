@@ -292,7 +292,7 @@ export default function Dashboard() {
         </div>
 
         {/* Pinned custom symbols */}
-        {(pins.length > 0 || true) && (
+        {pins.length >= 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="text-[11px] font-mono text-muted-foreground uppercase tracking-wider flex items-center gap-2">
