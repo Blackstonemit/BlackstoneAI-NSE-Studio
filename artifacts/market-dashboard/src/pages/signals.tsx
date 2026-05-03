@@ -103,7 +103,8 @@ export default function SignalsBoard() {
 
   const handleSchedulerExpire = async () => {
     try {
-      const res = await fetch("/api/scheduler/expire", { method: "POST" });
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${base}/api/scheduler/expire`, { method: "POST" });
       const data = await res.json() as { expired: number };
       toast({ title: "Expiry Complete", description: `${data.expired} signal(s) marked as EXPIRED.` });
       queryClient.invalidateQueries({ queryKey: getGetSignalsQueryKey() });
@@ -115,7 +116,8 @@ export default function SignalsBoard() {
   const handleSchedulerGenerate = async () => {
     setSchedulerRunning(true);
     try {
-      const res = await fetch("/api/scheduler/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${base}/api/scheduler/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
       const data = await res.json() as { generated: number };
       if (data.generated > 0) {
         toast({ title: "AI Signals Generated", description: `${data.generated} new signal(s) created by AI scheduler.` });

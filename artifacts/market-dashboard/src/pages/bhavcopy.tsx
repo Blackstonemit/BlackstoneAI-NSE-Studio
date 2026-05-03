@@ -262,9 +262,16 @@ export default function BhavcopyPage() {
   const topLosers  = [...eqRows].filter(r => r.changePct < 0).sort((a, b) => a.changePct - b.changePct).slice(0, 5);
   const mostActive = [...eqRows].sort((a, b) => b.turnoverLacs - a.turnoverLacs).slice(0, 5);
 
+  const STRING_KEYS = new Set<SortKey>(["symbol", "series", "date"]);
+
   const filtered = eqRows
     .filter((r) => !search || r.symbol.includes(search.toUpperCase()))
     .sort((a, b) => {
+      if (STRING_KEYS.has(sortKey)) {
+        const av = String(a[sortKey]);
+        const bv = String(b[sortKey]);
+        return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+      }
       const av = a[sortKey] as number;
       const bv = b[sortKey] as number;
       return sortDir === "asc" ? av - bv : bv - av;
@@ -394,12 +401,12 @@ export default function BhavcopyPage() {
       {/* 3-column top tables */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <TopTable
-          title="▲  MOST ACTIVE CALLS (TOP GAINERS)"
+          title="▲  TOP GAINERS"
           rows={topGainers}
           colorFn={() => "text-green-400"}
         />
         <TopTable
-          title="▼  MOST ACTIVE PUTS (TOP LOSERS)"
+          title="▼  TOP LOSERS"
           rows={topLosers}
           colorFn={() => "text-red-400"}
         />
