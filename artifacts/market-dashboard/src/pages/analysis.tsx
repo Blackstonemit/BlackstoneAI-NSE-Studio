@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Loader2, BrainCircuit } from "lucide-react";
+import { Search, Loader2, BrainCircuit, Cpu } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -83,6 +83,10 @@ export default function AnalysisBoard() {
             </SelectContent>
           </Select>
 
+          <div className="flex items-center gap-1 text-xs font-mono text-muted-foreground border border-muted rounded-sm px-2 py-1">
+            <Cpu className="h-3 w-3 text-success" />
+            NVIDIA QWEN
+          </div>
           <Button 
             onClick={handleAnalyze} 
             disabled={runAgent.isPending}

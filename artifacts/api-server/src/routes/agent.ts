@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { openai } from "@workspace/integrations-openai-ai-server";
+import { nvidia, NVIDIA_MODEL } from "../lib/nvidia";
 import { db } from "@workspace/db";
 import { signals } from "@workspace/db";
 import { computeTechnicals } from "./analysis";
@@ -72,9 +72,9 @@ Respond with this exact JSON structure:
 
 Provide 1-3 specific, actionable signals. If ${instrumentType} is OPTIONS, suggest specific strike prices and expiries.`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      max_completion_tokens: 2048,
+    const response = await nvidia.chat.completions.create({
+      model: NVIDIA_MODEL,
+      max_tokens: 2048,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -99,11 +99,17 @@ Provide 1-3 specific, actionable signals. If ${instrumentType} is OPTIONS, sugge
     const nowIST = new Date(now.getTime() + istOffsetMs);
     let expiresAt: Date;
     if (timeframe === "INTRADAY") {
-      // 15:30 IST = 10:00 UTC
+      // Market closes at 15:30 IST = 10:00 UTC
       expiresAt = new Date(Date.UTC(
         nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate(),
         10, 0, 0, 0
       ));
+      if (expiresAt <= now) {
+        expiresAt = new Date(expiresAt.getTime() + 24 * 60 * 60 * 1000);
+        const day = expiresAt.getUTCDay();
+        if (day === 6) expiresAt = new Date(expiresAt.getTime() + 2 * 24 * 60 * 60 * 1000);
+        else if (day === 0) expiresAt = new Date(expiresAt.getTime() + 1 * 24 * 60 * 60 * 1000);
+      }
     } else if (timeframe === "SWING") {
       expiresAt = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
     } else {

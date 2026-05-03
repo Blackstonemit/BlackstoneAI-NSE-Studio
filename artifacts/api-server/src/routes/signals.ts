@@ -3,7 +3,7 @@ import { GetSignalsQueryParams, GetSignalParams } from "@workspace/api-zod";
 import { db } from "@workspace/db";
 import { signals } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
-import { openai } from "@workspace/integrations-openai-ai-server";
+import { nvidia, NVIDIA_MODEL } from "../lib/nvidia";
 import { computeTechnicals } from "./analysis";
 
 const router: IRouter = Router();
@@ -119,9 +119,9 @@ Generate a JSON signal with this exact structure:
   "rationale": "concise 1-2 sentence rationale"
 }`;
 
-        const response = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          max_completion_tokens: 500,
+        const response = await nvidia.chat.completions.create({
+          model: NVIDIA_MODEL,
+          max_tokens: 1024,
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },

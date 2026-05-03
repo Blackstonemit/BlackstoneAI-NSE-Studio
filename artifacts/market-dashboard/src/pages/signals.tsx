@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, TerminalSquare } from "lucide-react";
+import { Loader2, TerminalSquare, Cpu } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function SignalsBoard() {
@@ -67,14 +67,20 @@ export default function SignalsBoard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight font-mono">SIGNALS BOARD</h1>
-        <Button 
-          onClick={handleGenerate} 
-          disabled={generateSignals.isPending}
-          className="font-mono bg-primary text-primary-foreground hover:bg-primary/90"
-        >
-          {generateSignals.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TerminalSquare className="mr-2 h-4 w-4" />}
-          GENERATE SIGNALS
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 text-xs font-mono text-muted-foreground border border-muted rounded-sm px-2 py-1">
+            <Cpu className="h-3 w-3 text-success" />
+            NVIDIA QWEN
+          </div>
+          <Button 
+            onClick={handleGenerate} 
+            disabled={generateSignals.isPending}
+            className="font-mono bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            {generateSignals.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TerminalSquare className="mr-2 h-4 w-4" />}
+            GENERATE SIGNALS
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-4">
