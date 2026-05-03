@@ -26,7 +26,7 @@ const PROVIDER_META: Record<string, { label: string; color: string; keyUrl: stri
     model: "Qwen 3.5 122B",
   },
   openai: {
-    label: "OpenAI",
+    label: "ChatGPT",
     color: "text-blue-400",
     keyUrl: "https://platform.openai.com/api-keys",
     keyHint: "sk-...",
