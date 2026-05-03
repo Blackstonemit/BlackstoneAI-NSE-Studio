@@ -10,20 +10,70 @@ import {
 } from "@workspace/api-client-react";
 import { useLiveRefresh } from "@/hooks/use-live-refresh";
 import { LiveRefreshBar } from "@/components/live-refresh-bar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSettings } from "@/lib/settings";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, TerminalSquare, Cpu } from "lucide-react";
+import { Loader2, TerminalSquare, Cpu, BrainCircuit, Clock3 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+function SchedulerBar({
+  onExpire,
+  onGenerate,
+  isGenerating,
+}: {
+  onExpire: () => void;
+  onGenerate: () => void;
+  isGenerating: boolean;
+}) {
+  const { settings } = useSettings();
+
+  return (
+    <div className="flex items-center gap-3 text-[11px] font-mono text-muted-foreground border border-muted/40 rounded-sm px-3 py-1.5 bg-muted/5">
+      <div className="flex items-center gap-1.5 text-primary/80">
+        <BrainCircuit className="h-3.5 w-3.5" />
+        AI SCHEDULER
+      </div>
+      <span className="text-muted-foreground/25">|</span>
+      <span>
+        Auto-generate:{" "}
+        <span className={settings.agentAutoGenerate ? "text-green-400 font-bold" : "text-muted-foreground/50"}>
+          {settings.agentAutoGenerate ? "ON" : "OFF"}
+        </span>
+      </span>
+      <span className="text-muted-foreground/25">|</span>
+      <span className="text-muted-foreground/60">Every 30 min during market hours</span>
+      <span className="text-muted-foreground/25">|</span>
+      <button
+        onClick={onExpire}
+        className="flex items-center gap-1 border border-muted rounded-sm px-2 py-0.5 hover:text-yellow-400 hover:border-yellow-500/40 transition-colors"
+        title="Expire stale signals now"
+      >
+        <Clock3 className="h-3 w-3" />
+        EXPIRE NOW
+      </button>
+      <button
+        onClick={onGenerate}
+        disabled={isGenerating}
+        className="flex items-center gap-1 border border-muted rounded-sm px-2 py-0.5 hover:text-primary hover:border-primary/40 transition-colors disabled:opacity-40"
+        title="Generate signals now via AI scheduler"
+      >
+        {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <BrainCircuit className="h-3 w-3" />}
+        RUN NOW
+      </button>
+    </div>
+  );
+}
 
 export default function SignalsBoard() {
   const [type, setType] = useState<GetSignalsType | "ALL">("ALL");
   const [action, setAction] = useState<GetSignalsAction | "ALL">("ALL");
   const [status, setStatus] = useState<GetSignalsStatus | "ALL">("ACTIVE");
-  
+  const [schedulerRunning, setSchedulerRunning] = useState(false);
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -33,7 +83,7 @@ export default function SignalsBoard() {
     status: status === "ALL" ? undefined : status 
   }, {
     query: {
-      queryKey: getGetSignalsQueryKey({ type: type === "ALL" ? undefined : type, action: action === "ALL" ? undefined : action, status: status === "ALL" ? undefined : status })
+      queryKey: getGetSignalsQueryKey({ type: type === "ALL" ? undefined : type, action: action === "ALL" ? undefined : action, status: status === "ALL" ? undefined : status }) as any
     }
   });
 
@@ -42,23 +92,45 @@ export default function SignalsBoard() {
   const handleGenerate = () => {
     generateSignals.mutate({ data: { timeframe: "INTRADAY" } }, {
       onSuccess: () => {
-        toast({
-          title: "Signals Generated",
-          description: "New trading signals have been generated successfully.",
-        });
+        toast({ title: "Signals Generated", description: "New trading signals have been generated." });
         queryClient.invalidateQueries({ queryKey: getGetSignalsQueryKey() });
       },
       onError: () => {
-        toast({
-          title: "Error",
-          description: "Failed to generate signals.",
-          variant: "destructive"
-        });
+        toast({ title: "Error", description: "Failed to generate signals.", variant: "destructive" });
       }
     });
   };
 
-  const { isMarketOpen, isPreOpen, lastUpdatedIST, countdown, refresh } = useLiveRefresh({
+  const handleSchedulerExpire = async () => {
+    try {
+      const res = await fetch("/api/scheduler/expire", { method: "POST" });
+      const data = await res.json() as { expired: number };
+      toast({ title: "Expiry Complete", description: `${data.expired} signal(s) marked as EXPIRED.` });
+      queryClient.invalidateQueries({ queryKey: getGetSignalsQueryKey() });
+    } catch {
+      toast({ title: "Error", description: "Expiry request failed.", variant: "destructive" });
+    }
+  };
+
+  const handleSchedulerGenerate = async () => {
+    setSchedulerRunning(true);
+    try {
+      const res = await fetch("/api/scheduler/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      const data = await res.json() as { generated: number };
+      if (data.generated > 0) {
+        toast({ title: "AI Signals Generated", description: `${data.generated} new signal(s) created by AI scheduler.` });
+        queryClient.invalidateQueries({ queryKey: getGetSignalsQueryKey() });
+      } else {
+        toast({ title: "No Signals Generated", description: "Market may be closed or AI returned no results.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Error", description: "Scheduler generate failed.", variant: "destructive" });
+    } finally {
+      setSchedulerRunning(false);
+    }
+  };
+
+  const { isMarketOpen, isPreOpen, lastUpdatedIST, countdown, paused, refresh } = useLiveRefresh({
     onRefresh: () => {
       queryClient.invalidateQueries({ queryKey: getGetSignalsQueryKey() });
     },
@@ -74,6 +146,7 @@ export default function SignalsBoard() {
             isPreOpen={isPreOpen}
             lastUpdatedIST={lastUpdatedIST}
             countdown={countdown}
+            paused={paused}
             onRefresh={refresh}
           />
           <div className="flex items-center gap-1 text-xs font-mono text-muted-foreground border border-muted rounded-sm px-2 py-1">
@@ -90,6 +163,12 @@ export default function SignalsBoard() {
           </Button>
         </div>
       </div>
+
+      <SchedulerBar
+        onExpire={handleSchedulerExpire}
+        onGenerate={handleSchedulerGenerate}
+        isGenerating={schedulerRunning}
+      />
 
       <div className="flex gap-4">
         <Select value={type} onValueChange={(v: GetSignalsType | "ALL") => setType(v)}>
@@ -164,15 +243,15 @@ export default function SignalsBoard() {
                   <div className="grid grid-cols-3 gap-6 bg-muted/20 p-4 rounded-sm border border-muted">
                     <div>
                       <div className="text-xs text-muted-foreground font-mono mb-1">ENTRY</div>
-                      <div className="font-mono font-bold">{signal.entryPrice ?? '-'}</div>
+                      <div className="font-mono font-bold">{signal.entryPrice ?? '—'}</div>
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground font-mono mb-1">TARGET</div>
-                      <div className="font-mono font-bold text-success">{signal.targetPrice ?? '-'}</div>
+                      <div className="font-mono font-bold text-success">{signal.targetPrice ?? '—'}</div>
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground font-mono mb-1">STOP LOSS</div>
-                      <div className="font-mono font-bold text-destructive">{signal.stopLoss ?? '-'}</div>
+                      <div className="font-mono font-bold text-destructive">{signal.stopLoss ?? '—'}</div>
                     </div>
                   </div>
                 </div>
@@ -198,7 +277,7 @@ export default function SignalsBoard() {
         ) : (
           <div className="py-20 text-center border border-muted border-dashed rounded-sm">
             <h3 className="text-lg font-mono font-bold mb-2">NO SIGNALS FOUND</h3>
-            <p className="text-muted-foreground text-sm mb-4">There are no signals matching your current filters.</p>
+            <p className="text-muted-foreground text-sm mb-4">No signals match your current filters.</p>
             <Button onClick={handleGenerate} variant="outline" className="font-mono">GENERATE NEW SIGNALS</Button>
           </div>
         )}

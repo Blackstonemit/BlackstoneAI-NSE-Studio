@@ -22,6 +22,7 @@ export type Settings = {
   agentMaxTokens: number;
   agentSaveSignals: boolean;
   agentCustomContext: string;
+  agentAutoGenerate: boolean;
 };
 
 const SETTINGS_KEY = "nse_terminal_settings";
@@ -47,6 +48,7 @@ export const DEFAULT_SETTINGS: Settings = {
   agentMaxTokens: 2048,
   agentSaveSignals: true,
   agentCustomContext: "",
+  agentAutoGenerate: false,
 };
 
 export function loadSettings(): Settings {

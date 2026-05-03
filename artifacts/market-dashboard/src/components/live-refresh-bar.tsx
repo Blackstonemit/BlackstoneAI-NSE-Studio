@@ -1,4 +1,4 @@
-import { Activity, RefreshCw, Clock } from "lucide-react";
+import { Activity, RefreshCw, Clock, PauseCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -8,6 +8,7 @@ type Props = {
   countdown: number;
   onRefresh: () => void;
   isRefreshing?: boolean;
+  paused?: boolean;
   className?: string;
 };
 
@@ -18,6 +19,7 @@ export function LiveRefreshBar({
   countdown,
   onRefresh,
   isRefreshing,
+  paused,
   className,
 }: Props) {
   const statusColor = isMarketOpen
@@ -41,7 +43,7 @@ export function LiveRefreshBar({
     >
       <div className={cn("flex items-center gap-1.5", statusColor)}>
         <Activity
-          className={cn("h-3.5 w-3.5", isMarketOpen && "animate-pulse")}
+          className={cn("h-3.5 w-3.5", isMarketOpen && !paused && "animate-pulse")}
         />
         {statusLabel}
       </div>
@@ -53,14 +55,21 @@ export function LiveRefreshBar({
         <span>{lastUpdatedIST} IST</span>
       </div>
 
-      <div
-        className={cn(
-          "tabular-nums transition-colors",
-          countdown <= 5 ? "text-primary font-bold" : "text-muted-foreground"
-        )}
-      >
-        {countdown}s
-      </div>
+      {paused ? (
+        <div className="flex items-center gap-1 text-muted-foreground/50">
+          <PauseCircle className="h-3 w-3" />
+          PAUSED
+        </div>
+      ) : (
+        <div
+          className={cn(
+            "tabular-nums transition-colors",
+            countdown <= 5 ? "text-primary font-bold" : "text-muted-foreground"
+          )}
+        >
+          {countdown}s
+        </div>
+      )}
 
       <button
         onClick={onRefresh}

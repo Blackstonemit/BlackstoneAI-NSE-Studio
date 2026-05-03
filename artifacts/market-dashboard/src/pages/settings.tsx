@@ -277,6 +277,9 @@ export default function SettingsDashboard() {
               <Row label="Save Signals to DB" hint="Persist AI-generated signals to the signals board">
                 <Toggle checked={local.agentSaveSignals} onChange={(v) => set("agentSaveSignals", v)} />
               </Row>
+              <Row label="Auto-Generate Signals" hint="Server auto-generates signals every 30 min during market hours">
+                <Toggle checked={local.agentAutoGenerate} onChange={(v) => set("agentAutoGenerate", v)} />
+              </Row>
             </div>
           </div>
 
