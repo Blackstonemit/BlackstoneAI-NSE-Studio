@@ -9,7 +9,8 @@ import {
   TerminalSquare,
   FlaskConical,
   Settings2,
-  CandlestickChart
+  CandlestickChart,
+  PackageOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ const navItems = [
   { href: "/analysis", label: "Technical Analysis", icon: TrendingUp },
   { href: "/charts", label: "Charts", icon: CandlestickChart },
   { href: "/backtest", label: "Backtest", icon: FlaskConical },
+  { href: "/bhavcopy", label: "Bhavcopy", icon: PackageOpen },
   { href: "/watchlist", label: "Watchlist", icon: List },
   { href: "/settings", label: "Settings", icon: Settings2 },
 ];

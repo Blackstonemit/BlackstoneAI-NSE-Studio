@@ -14,6 +14,7 @@ import WatchlistBoard from "@/pages/watchlist";
 import BacktestPage from "@/pages/backtest";
 import SettingsDashboard from "@/pages/settings";
 import ChartsPage from "@/pages/charts";
+import BhavcopyPage from "@/pages/bhavcopy";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -38,6 +39,7 @@ function Router() {
         <Route path="/watchlist" component={WatchlistBoard} />
         <Route path="/backtest" component={BacktestPage} />
         <Route path="/charts" component={ChartsPage} />
+        <Route path="/bhavcopy" component={BhavcopyPage} />
         <Route path="/settings" component={SettingsDashboard} />
         <Route component={NotFound} />
       </Switch>
