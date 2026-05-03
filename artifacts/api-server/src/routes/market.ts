@@ -187,7 +187,7 @@ router.get("/market/options-chain", async (req, res) => {
       // Generate synthetic options chain around current price
       const strikes = [];
       const base = Math.round(underlyingPrice / 100) * 100;
-      for (let i = -5; i <= 5; i++) {
+      for (let i = -10; i <= 10; i++) {
         strikes.push(base + i * 100);
       }
 
