@@ -22,7 +22,7 @@ const INDICES: Array<{ symbol: string; yahooSymbol: string; name: string }> = [
   { symbol: "NIFTY50", yahooSymbol: "^NSEI", name: "NIFTY 50" },
   { symbol: "BANKNIFTY", yahooSymbol: "^NSEBANK", name: "BANK NIFTY" },
   { symbol: "SENSEX", yahooSymbol: "^BSESN", name: "BSE SENSEX" },
-  { symbol: "NIFTYMID", yahooSymbol: "^CNXMIDCAP", name: "NIFTY MIDCAP 100" },
+  { symbol: "NIFTYMID", yahooSymbol: "^NSEMDCP50", name: "NIFTY MIDCAP 50" },
   { symbol: "NIFTYIT", yahooSymbol: "^CNXIT", name: "NIFTY IT" },
 ];
 

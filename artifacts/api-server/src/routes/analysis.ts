@@ -149,10 +149,9 @@ async function computeTechnicals(symbol: string, interval: string = "1d") {
   }
 
   if (macd) {
-    totalSignals++;
+    totalSignals += 2;
     if (macd.histogram > 0) bullishSignals++;
     if (macd.macd > macd.signal) bullishSignals++;
-    totalSignals++;
   }
 
   if (sma20 && sma50) {

@@ -89,10 +89,18 @@ export default function FuturesFeed() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right font-mono text-muted-foreground">
-                      {(f.volume / 100000).toFixed(2)}M
+                      {f.volume >= 1_000_000
+                        ? `${(f.volume / 1_000_000).toFixed(2)}M`
+                        : f.volume >= 1_000
+                          ? `${(f.volume / 1_000).toFixed(1)}K`
+                          : f.volume.toString()}
                     </TableCell>
                     <TableCell className="text-right font-mono text-muted-foreground">
-                      {(f.openInterest / 100000).toFixed(2)}M
+                      {f.openInterest >= 1_000_000
+                        ? `${(f.openInterest / 1_000_000).toFixed(2)}M`
+                        : f.openInterest >= 1_000
+                          ? `${(f.openInterest / 1_000).toFixed(1)}K`
+                          : f.openInterest.toString()}
                     </TableCell>
                     <TableCell className={cn(
                       "text-right font-mono",

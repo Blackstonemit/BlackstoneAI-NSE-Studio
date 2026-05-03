@@ -13,6 +13,59 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { cn } from "@/lib/utils";
 import { ArrowUpIcon, ArrowDownIcon } from "lucide-react";
 
+function QuoteTable({ data, isLoading }: { data: any[], isLoading: boolean }) {
+  if (isLoading) {
+    return (
+      <div className="space-y-2 p-4">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-10 w-full" />
+        ))}
+      </div>
+    );
+  }
+  
+  if (!data || data.length === 0) {
+    return <div className="p-8 text-center text-muted-foreground font-mono text-sm">NO DATA</div>;
+  }
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow className="border-muted hover:bg-transparent">
+          <TableHead className="font-mono text-xs text-muted-foreground">SYMBOL</TableHead>
+          <TableHead className="font-mono text-xs text-muted-foreground text-right">LTP</TableHead>
+          <TableHead className="font-mono text-xs text-muted-foreground text-right">CHG %</TableHead>
+          <TableHead className="font-mono text-xs text-muted-foreground text-right">VOL</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {data.map((q) => (
+          <TableRow key={q.symbol} className="border-muted hover:bg-muted/10">
+            <TableCell className="font-bold">{q.symbol}</TableCell>
+            <TableCell className="text-right font-mono">{q.price.toFixed(2)}</TableCell>
+            <TableCell className={cn(
+              "text-right font-mono",
+              q.change >= 0 ? "text-success" : "text-destructive"
+            )}>
+              <div className="flex items-center justify-end">
+                {q.change >= 0 ? <ArrowUpIcon className="h-3 w-3 mr-1" /> : <ArrowDownIcon className="h-3 w-3 mr-1" />}
+                {Math.abs(q.changePercent).toFixed(2)}%
+              </div>
+            </TableCell>
+            <TableCell className="text-right font-mono text-muted-foreground">
+              {q.volume >= 1000000
+                ? `${(q.volume / 1000000).toFixed(2)}M`
+                : q.volume >= 1000
+                  ? `${(q.volume / 1000).toFixed(1)}K`
+                  : q.volume}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+
 export default function MarketFeed() {
   const queryClient = useQueryClient();
 
@@ -35,59 +88,6 @@ export default function MarketFeed() {
     }, 30000);
     return () => clearInterval(interval);
   }, [queryClient, watchlistSymbols]);
-
-  const QuoteTable = ({ data, isLoading }: { data: any[], isLoading: boolean }) => {
-    if (isLoading) {
-      return (
-        <div className="space-y-2 p-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-10 w-full" />
-          ))}
-        </div>
-      );
-    }
-    
-    if (!data || data.length === 0) {
-      return <div className="p-8 text-center text-muted-foreground font-mono text-sm">NO DATA</div>;
-    }
-
-    return (
-      <Table>
-        <TableHeader>
-          <TableRow className="border-muted hover:bg-transparent">
-            <TableHead className="font-mono text-xs text-muted-foreground">SYMBOL</TableHead>
-            <TableHead className="font-mono text-xs text-muted-foreground text-right">LTP</TableHead>
-            <TableHead className="font-mono text-xs text-muted-foreground text-right">CHG %</TableHead>
-            <TableHead className="font-mono text-xs text-muted-foreground text-right">VOL</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.map((q) => (
-            <TableRow key={q.symbol} className="border-muted hover:bg-muted/10">
-              <TableCell className="font-bold">{q.symbol}</TableCell>
-              <TableCell className="text-right font-mono">{q.price.toFixed(2)}</TableCell>
-              <TableCell className={cn(
-                "text-right font-mono",
-                q.change >= 0 ? "text-success" : "text-destructive"
-              )}>
-                <div className="flex items-center justify-end">
-                  {q.change >= 0 ? <ArrowUpIcon className="h-3 w-3 mr-1" /> : <ArrowDownIcon className="h-3 w-3 mr-1" />}
-                  {Math.abs(q.changePercent).toFixed(2)}%
-                </div>
-              </TableCell>
-              <TableCell className="text-right font-mono text-muted-foreground">
-                {q.volume >= 1000000
-                  ? `${(q.volume / 1000000).toFixed(2)}M`
-                  : q.volume >= 1000
-                    ? `${(q.volume / 1000).toFixed(1)}K`
-                    : q.volume}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    );
-  };
 
   return (
     <div className="space-y-6">

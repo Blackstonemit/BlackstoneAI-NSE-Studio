@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { GetSignalsQueryParams, GetSignalParams } from "@workspace/api-zod";
 import { db } from "@workspace/db";
 import { signals } from "@workspace/db";
-import { eq, and, ne } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { computeTechnicals } from "./analysis";
 
@@ -12,7 +12,7 @@ router.get("/signals", async (req, res) => {
   try {
     const query = GetSignalsQueryParams.parse(req.query);
 
-    const allSignals = await db.select().from(signals).orderBy(signals.createdAt);
+    const allSignals = await db.select().from(signals).orderBy(desc(signals.createdAt));
 
     const filtered = allSignals.filter((s) => {
       if (query.type && query.type !== "ALL" && s.instrumentType !== query.type)
@@ -33,7 +33,7 @@ router.get("/signals", async (req, res) => {
     });
 
     res.json(
-      filtered.reverse().map((s) => ({
+      filtered.map((s) => ({
         ...s,
         createdAt: s.createdAt.toISOString(),
         expiresAt: s.expiresAt?.toISOString() ?? null,
@@ -144,11 +144,19 @@ Generate a JSON signal with this exact structure:
         const nowIST = new Date(now.getTime() + istOffsetMs);
         let expiresAt: Date;
         if (timeframe === "INTRADAY") {
-          // 15:30 IST = 10:00 UTC
+          // Market closes at 15:30 IST = 10:00 UTC
           expiresAt = new Date(Date.UTC(
             nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate(),
             10, 0, 0, 0
           ));
+          // If market close has already passed today, set to next trading day
+          if (expiresAt <= now) {
+            expiresAt = new Date(expiresAt.getTime() + 24 * 60 * 60 * 1000);
+            // Skip weekend: if Saturday(6) advance to Monday, if Sunday(7) advance to Monday
+            const day = expiresAt.getUTCDay();
+            if (day === 6) expiresAt = new Date(expiresAt.getTime() + 2 * 24 * 60 * 60 * 1000);
+            else if (day === 0) expiresAt = new Date(expiresAt.getTime() + 1 * 24 * 60 * 60 * 1000);
+          }
         } else if (timeframe === "SWING") {
           expiresAt = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
         } else {

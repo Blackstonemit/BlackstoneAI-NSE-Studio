@@ -62,7 +62,9 @@ export default function OptionsChain() {
               </SelectTrigger>
               <SelectContent>
                 {chainData.expiries.map(exp => (
-                  <SelectItem key={exp} value={exp}>{exp}</SelectItem>
+                  <SelectItem key={exp} value={exp}>
+                    {new Date(exp).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -126,6 +128,7 @@ export default function OptionsChain() {
               <TableBody>
                 {chainData.calls.map((call, i) => {
                   const put = chainData.puts[i];
+                  if (!put) return null;
                   const isCallITM = call.strikePrice < chainData.underlyingPrice;
                   const isPutITM = put.strikePrice > chainData.underlyingPrice;
 
