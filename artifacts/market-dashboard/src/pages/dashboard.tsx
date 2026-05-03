@@ -6,6 +6,8 @@ import {
   useGetAnalysisSummary, getGetAnalysisSummaryQueryKey,
   useGetSignals, getGetSignalsQueryKey
 } from "@workspace/api-client-react";
+import { useLiveRefresh } from "@/hooks/use-live-refresh";
+import { LiveRefreshBar } from "@/components/live-refresh-bar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -233,36 +235,28 @@ export default function Dashboard() {
   // Fetch on pin list change
   useEffect(() => { fetchPinnedQuotes(pins); }, [pins, fetchPinnedQuotes]);
 
-  // Auto-refresh everything every 30 s
-  useEffect(() => {
-    const interval = setInterval(() => {
+  const { isMarketOpen, isPreOpen, lastUpdatedIST, countdown, refresh } = useLiveRefresh({
+    onRefresh: () => {
       queryClient.invalidateQueries({ queryKey: getGetMarketIndicesQueryKey() });
       queryClient.invalidateQueries({ queryKey: getGetMarketMoversQueryKey() });
       queryClient.invalidateQueries({ queryKey: getGetAnalysisSummaryQueryKey() });
       queryClient.invalidateQueries({ queryKey: getGetSignalsQueryKey({ status: "ACTIVE" }) });
       if (pins.length > 0) fetchPinnedQuotes(pins);
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [queryClient, pins, fetchPinnedQuotes]);
-
-  const isMarketOpen = (() => {
-    const now = new Date();
-    const ist = new Date(now.getTime() + 5.5 * 3600000);
-    const day = ist.getUTCDay();
-    if (day === 0 || day === 6) return false;
-    const mins = ist.getUTCHours() * 60 + ist.getUTCMinutes();
-    return mins >= 555 && mins < 930;
-  })();
+    },
+  });
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight font-mono">LIVE DASHBOARD</h1>
-        <div className={cn("flex items-center gap-2 text-xs font-mono", isMarketOpen ? "text-success" : "text-muted-foreground")}>
-          <Activity className={cn("h-4 w-4", isMarketOpen ? "text-success animate-pulse" : "text-muted-foreground")} />
-          {isMarketOpen ? "MARKET OPEN" : "MARKET CLOSED"}
-        </div>
+          <LiveRefreshBar
+          isMarketOpen={isMarketOpen}
+          isPreOpen={isPreOpen}
+          lastUpdatedIST={lastUpdatedIST}
+          countdown={countdown}
+          onRefresh={refresh}
+        />
       </div>
 
       {/* Indices + Pinned row */}

@@ -4,6 +4,8 @@ import {
   useGetOptionsChain,
   getGetOptionsChainQueryKey,
 } from "@workspace/api-client-react";
+import { useLiveRefresh } from "@/hooks/use-live-refresh";
+import { LiveRefreshBar } from "@/components/live-refresh-bar";
 import type { OptionContract } from "@workspace/api-client-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -157,12 +159,11 @@ export default function OptionsChain() {
 
   useEffect(() => { if (chainData) setLastUpdated(new Date()); }, [chainData]);
 
-  useEffect(() => {
-    const id = setInterval(() => {
+  const { isMarketOpen, isPreOpen, lastUpdatedIST, countdown, refresh: liveRefresh } = useLiveRefresh({
+    onRefresh: () => {
       queryClient.invalidateQueries({ queryKey: getGetOptionsChainQueryKey(queryParams) });
-    }, 30000);
-    return () => clearInterval(id);
-  }, [queryClient, symbol, expiry]);
+    },
+  });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -270,7 +271,16 @@ export default function OptionsChain() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight font-mono">OPTIONS CHAIN</h1>
+        <div className="flex items-center gap-3 flex-wrap">
+          <h1 className="text-2xl font-bold tracking-tight font-mono">OPTIONS CHAIN</h1>
+          <LiveRefreshBar
+            isMarketOpen={isMarketOpen}
+            isPreOpen={isPreOpen}
+            lastUpdatedIST={lastUpdatedIST}
+            countdown={countdown}
+            onRefresh={liveRefresh}
+          />
+        </div>
         <div className="flex gap-2 items-center flex-wrap">
           <form onSubmit={handleSearch} className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

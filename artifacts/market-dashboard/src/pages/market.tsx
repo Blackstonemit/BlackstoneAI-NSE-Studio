@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { 
   useGetMarketMovers, 
@@ -7,6 +6,8 @@ import {
   useGetMarketQuotes,
   getGetMarketQuotesQueryKey
 } from "@workspace/api-client-react";
+import { useLiveRefresh } from "@/hooks/use-live-refresh";
+import { LiveRefreshBar } from "@/components/live-refresh-bar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -79,19 +80,27 @@ export default function MarketFeed() {
     { query: { enabled: !!watchlistSymbols, queryKey: getGetMarketQuotesQueryKey({ symbols: watchlistSymbols }) } }
   );
 
-  useEffect(() => {
-    const interval = setInterval(() => {
+  const { isMarketOpen, isPreOpen, lastUpdatedIST, countdown, refresh } = useLiveRefresh({
+    onRefresh: () => {
       queryClient.invalidateQueries({ queryKey: getGetMarketMoversQueryKey() });
       if (watchlistSymbols) {
         queryClient.invalidateQueries({ queryKey: getGetMarketQuotesQueryKey({ symbols: watchlistSymbols }) });
       }
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [queryClient, watchlistSymbols]);
+    },
+  });
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight font-mono">MARKET FEED</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight font-mono">MARKET FEED</h1>
+        <LiveRefreshBar
+          isMarketOpen={isMarketOpen}
+          isPreOpen={isPreOpen}
+          lastUpdatedIST={lastUpdatedIST}
+          countdown={countdown}
+          onRefresh={refresh}
+        />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">

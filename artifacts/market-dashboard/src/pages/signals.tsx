@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { 
   useGetSignals, 
@@ -8,6 +8,8 @@ import {
   GetSignalsAction,
   GetSignalsStatus
 } from "@workspace/api-client-react";
+import { useLiveRefresh } from "@/hooks/use-live-refresh";
+import { LiveRefreshBar } from "@/components/live-refresh-bar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,18 +58,24 @@ export default function SignalsBoard() {
     });
   };
 
-  useEffect(() => {
-    const interval = setInterval(() => {
+  const { isMarketOpen, isPreOpen, lastUpdatedIST, countdown, refresh } = useLiveRefresh({
+    onRefresh: () => {
       queryClient.invalidateQueries({ queryKey: getGetSignalsQueryKey() });
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [queryClient]);
+    },
+  });
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold tracking-tight font-mono">SIGNALS BOARD</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <LiveRefreshBar
+            isMarketOpen={isMarketOpen}
+            isPreOpen={isPreOpen}
+            lastUpdatedIST={lastUpdatedIST}
+            countdown={countdown}
+            onRefresh={refresh}
+          />
           <div className="flex items-center gap-1 text-xs font-mono text-muted-foreground border border-muted rounded-sm px-2 py-1">
             <Cpu className="h-3 w-3 text-success" />
             NVIDIA QWEN

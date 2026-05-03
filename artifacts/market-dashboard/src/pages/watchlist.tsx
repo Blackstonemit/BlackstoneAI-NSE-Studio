@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { 
   useGetWatchlist, 
@@ -8,6 +8,8 @@ import {
   AddWatchlistBodyExchange,
   AddWatchlistBodyInstrumentType
 } from "@workspace/api-client-react";
+import { useLiveRefresh } from "@/hooks/use-live-refresh";
+import { LiveRefreshBar } from "@/components/live-refresh-bar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -18,16 +20,48 @@ import { Trash2, Plus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 
+type LiveQuote = { symbol: string; name: string; price: number; change: number; changePercent: number };
+
 export default function WatchlistBoard() {
   const [symbol, setSymbol] = useState("");
   const [name, setName] = useState("");
   const [exchange, setExchange] = useState<AddWatchlistBodyExchange>("NSE");
   const [type, setType] = useState<AddWatchlistBodyInstrumentType>("STOCK");
-  
+  const [liveQuotes, setLiveQuotes] = useState<Record<string, LiveQuote>>({});
+  const [quotesLoading, setQuotesLoading] = useState(false);
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: watchlist, isLoading } = useGetWatchlist();
+
+  const fetchQuotes = useCallback(async (symbols: string[]) => {
+    if (symbols.length === 0) { setLiveQuotes({}); return; }
+    setQuotesLoading(true);
+    try {
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${base}/api/market/quotes?symbols=${symbols.join(",")}`);
+      const data: LiveQuote[] = await res.json();
+      const map: Record<string, LiveQuote> = {};
+      for (const q of data) map[q.symbol] = q;
+      setLiveQuotes(map);
+    } catch { /* silent */ }
+    finally { setQuotesLoading(false); }
+  }, []);
+
+  const watchlistSymbols = useRef<string[]>([]);
+  useEffect(() => {
+    const syms = watchlist?.map((w) => w.symbol) ?? [];
+    watchlistSymbols.current = syms;
+    fetchQuotes(syms);
+  }, [watchlist, fetchQuotes]);
+
+  const { isMarketOpen, isPreOpen, lastUpdatedIST, countdown, refresh } = useLiveRefresh({
+    onRefresh: () => {
+      queryClient.invalidateQueries({ queryKey: getGetWatchlistQueryKey() });
+      fetchQuotes(watchlistSymbols.current);
+    },
+  });
   
   const addMutation = useAddToWatchlist();
   const removeMutation = useRemoveFromWatchlist();
@@ -70,7 +104,17 @@ export default function WatchlistBoard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight font-mono">WATCHLIST MANAGEMENT</h1>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h1 className="text-2xl font-bold tracking-tight font-mono">WATCHLIST</h1>
+        <LiveRefreshBar
+          isMarketOpen={isMarketOpen}
+          isPreOpen={isPreOpen}
+          lastUpdatedIST={lastUpdatedIST}
+          countdown={countdown}
+          onRefresh={refresh}
+          isRefreshing={quotesLoading}
+        />
+      </div>
 
       <Card className="rounded-sm border-muted bg-card">
         <CardHeader className="p-4 border-b border-muted bg-muted/10">
@@ -150,16 +194,27 @@ export default function WatchlistBoard() {
                 <TableRow className="border-muted hover:bg-transparent bg-muted/5">
                   <TableHead className="font-mono text-xs text-muted-foreground">SYMBOL</TableHead>
                   <TableHead className="font-mono text-xs text-muted-foreground">NAME</TableHead>
+                  <TableHead className="font-mono text-xs text-muted-foreground text-right">LTP</TableHead>
+                  <TableHead className="font-mono text-xs text-muted-foreground text-right">CHG %</TableHead>
                   <TableHead className="font-mono text-xs text-muted-foreground">EXCHANGE</TableHead>
                   <TableHead className="font-mono text-xs text-muted-foreground">TYPE</TableHead>
                   <TableHead className="font-mono text-xs text-muted-foreground text-right">ACTION</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {watchlist.map((item) => (
+                {watchlist.map((item) => {
+                  const q = liveQuotes[item.symbol];
+                  const up = (q?.changePercent ?? 0) >= 0;
+                  return (
                   <TableRow key={item.id} className="border-muted hover:bg-muted/10">
                     <TableCell className="font-bold">{item.symbol}</TableCell>
                     <TableCell className="text-muted-foreground">{item.name}</TableCell>
+                    <TableCell className="text-right font-mono tabular-nums">
+                      {q ? q.price.toFixed(2) : <span className="text-muted-foreground/40">—</span>}
+                    </TableCell>
+                    <TableCell className={`text-right font-mono tabular-nums text-xs ${q ? (up ? "text-green-400" : "text-red-400") : "text-muted-foreground/40"}`}>
+                      {q ? `${up ? "+" : ""}${q.changePercent.toFixed(2)}%` : "—"}
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="font-mono text-xs border-muted">{item.exchange}</Badge>
                     </TableCell>
@@ -178,7 +233,8 @@ export default function WatchlistBoard() {
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           ) : (

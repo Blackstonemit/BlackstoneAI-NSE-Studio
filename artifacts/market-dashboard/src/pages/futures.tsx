@@ -4,6 +4,8 @@ import {
   useGetFutures, 
   getGetFuturesQueryKey
 } from "@workspace/api-client-react";
+import { useLiveRefresh } from "@/hooks/use-live-refresh";
+import { LiveRefreshBar } from "@/components/live-refresh-bar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -29,17 +31,24 @@ export default function FuturesFeed() {
     { query: { queryKey: getGetFuturesQueryKey(debouncedSearch ? { symbol: debouncedSearch } : undefined) } }
   );
 
-  useEffect(() => {
-    const interval = setInterval(() => {
+  const { isMarketOpen, isPreOpen, lastUpdatedIST, countdown, refresh } = useLiveRefresh({
+    onRefresh: () => {
       queryClient.invalidateQueries({ queryKey: getGetFuturesQueryKey() });
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [queryClient]);
+    },
+  });
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold tracking-tight font-mono">FUTURES</h1>
+
+        <LiveRefreshBar
+          isMarketOpen={isMarketOpen}
+          isPreOpen={isPreOpen}
+          lastUpdatedIST={lastUpdatedIST}
+          countdown={countdown}
+          onRefresh={refresh}
+        />
         
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

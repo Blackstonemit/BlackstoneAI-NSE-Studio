@@ -18,11 +18,12 @@ import {
   GetMarketHistoryInterval,
   GetMarketHistoryPeriod,
 } from "@workspace/api-client-react";
+import { useLiveRefresh } from "@/hooks/use-live-refresh";
+import { LiveRefreshBar } from "@/components/live-refresh-bar";
 import { loadSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
 import {
   CandlestickChart,
-  RefreshCw,
   TrendingUp,
   TrendingDown,
   Minus,
@@ -204,6 +205,10 @@ export default function ChartsPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     { query: { staleTime: 60_000 } as any }
   );
+
+  const { isMarketOpen, isPreOpen, lastUpdatedIST, countdown, refresh } = useLiveRefresh({
+    onRefresh: () => { refetch(); },
+  });
 
   // ── DOM refs ──────────────────────────────────────────────────────────────
   const mainRef   = useRef<HTMLDivElement>(null);
@@ -534,9 +539,15 @@ export default function ChartsPage() {
             </div>
           )}
 
-          <button onClick={() => refetch()} className="h-6 w-6 flex items-center justify-center border border-[#2a2a2a] rounded-sm text-[#555] hover:text-primary hover:border-primary transition-colors" title="Refresh">
-            <RefreshCw className="h-3 w-3" />
-          </button>
+          <LiveRefreshBar
+            isMarketOpen={isMarketOpen}
+            isPreOpen={isPreOpen}
+            lastUpdatedIST={lastUpdatedIST}
+            countdown={countdown}
+            onRefresh={refresh}
+            isRefreshing={isLoading}
+            className="text-[#666]"
+          />
           <button onClick={() => setFullscreen((f) => !f)} className="h-6 px-1.5 text-[10px] font-mono border border-[#2a2a2a] rounded-sm text-[#555] hover:text-primary hover:border-primary transition-colors">
             {fullscreen ? "EXIT FS" : "⛶ FS"}
           </button>
