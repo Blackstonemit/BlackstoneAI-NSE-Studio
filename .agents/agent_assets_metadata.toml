@@ -6,3 +6,9 @@ id = "eS6OfiXtUdprR1B2M-g7X"
 uri = "file://windows-installer.tar.gz"
 type = "unspecified"
 title = "Windows Installer Scripts (install.bat, start.bat, uninstall.bat)"
+
+[[outputs]]
+id = "QVlzM5sz6i-Oh-kjdDuSv"
+uri = "file://README.md"
+type = "text"
+title = "NSE/BSE AI Trading Signals — README"
