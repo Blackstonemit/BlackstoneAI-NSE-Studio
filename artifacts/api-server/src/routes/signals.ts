@@ -120,7 +120,7 @@ Generate a JSON signal with this exact structure:
 }`;
 
         const response = await openai.chat.completions.create({
-          model: "gpt-5-mini",
+          model: "gpt-4o-mini",
           max_completion_tokens: 500,
           messages: [
             { role: "system", content: systemPrompt },
@@ -139,13 +139,20 @@ Generate a JSON signal with this exact structure:
           continue;
         }
 
-        const expiresAt = new Date();
+        const now = new Date();
+        const istOffsetMs = 5.5 * 60 * 60 * 1000;
+        const nowIST = new Date(now.getTime() + istOffsetMs);
+        let expiresAt: Date;
         if (timeframe === "INTRADAY") {
-          expiresAt.setHours(15, 30, 0, 0);
+          // 15:30 IST = 10:00 UTC
+          expiresAt = new Date(Date.UTC(
+            nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate(),
+            10, 0, 0, 0
+          ));
         } else if (timeframe === "SWING") {
-          expiresAt.setDate(expiresAt.getDate() + 5);
+          expiresAt = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
         } else {
-          expiresAt.setDate(expiresAt.getDate() + 30);
+          expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
         }
 
         const [inserted] = await db

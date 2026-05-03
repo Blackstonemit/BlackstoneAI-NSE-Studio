@@ -73,7 +73,7 @@ Respond with this exact JSON structure:
 Provide 1-3 specific, actionable signals. If ${instrumentType} is OPTIONS, suggest specific strike prices and expiries.`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-5.4",
+      model: "gpt-4o",
       max_completion_tokens: 2048,
       messages: [
         { role: "system", content: systemPrompt },
@@ -94,13 +94,20 @@ Provide 1-3 specific, actionable signals. If ${instrumentType} is OPTIONS, sugge
 
     // Save generated signals to DB
     const savedSignals = [];
-    const expiresAt = new Date();
+    const now = new Date();
+    const istOffsetMs = 5.5 * 60 * 60 * 1000;
+    const nowIST = new Date(now.getTime() + istOffsetMs);
+    let expiresAt: Date;
     if (timeframe === "INTRADAY") {
-      expiresAt.setHours(15, 30, 0, 0);
+      // 15:30 IST = 10:00 UTC
+      expiresAt = new Date(Date.UTC(
+        nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate(),
+        10, 0, 0, 0
+      ));
     } else if (timeframe === "SWING") {
-      expiresAt.setDate(expiresAt.getDate() + 5);
+      expiresAt = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
     } else {
-      expiresAt.setDate(expiresAt.getDate() + 30);
+      expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
     }
 
     for (const sig of analysisResult.signals ?? []) {
