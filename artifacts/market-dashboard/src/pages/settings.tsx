@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSettings, DEFAULT_SETTINGS } from "@/lib/settings";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,195 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
-import { Settings2, RefreshCw, BarChart2, Eye, Save, RotateCcw, BrainCircuit, Sliders } from "lucide-react";
+import { Settings2, RefreshCw, BarChart2, Eye, Save, RotateCcw, BrainCircuit, Sliders, Layers, CheckCircle2, XCircle, ExternalLink, Eye as EyeIcon, EyeOff, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+type ProviderStatus = {
+  provider: "nvidia" | "openai" | "gemini";
+  configured: boolean;
+  enabled: boolean;
+  isDefault: boolean;
+};
+
+const PROVIDER_META: Record<string, { label: string; color: string; keyUrl: string; keyHint: string; model: string }> = {
+  nvidia: {
+    label: "NVIDIA NIM",
+    color: "text-green-400",
+    keyUrl: "https://build.nvidia.com/explore/discover",
+    keyHint: "nvapi-...",
+    model: "Qwen 3.5 122B",
+  },
+  openai: {
+    label: "OpenAI",
+    color: "text-blue-400",
+    keyUrl: "https://platform.openai.com/api-keys",
+    keyHint: "sk-...",
+    model: "GPT-4o Mini",
+  },
+  gemini: {
+    label: "Google Gemini",
+    color: "text-yellow-400",
+    keyUrl: "https://aistudio.google.com/apikey",
+    keyHint: "AIza...",
+    model: "Gemini 1.5 Flash",
+  },
+};
+
+function AIProvidersCard() {
+  const { toast } = useToast();
+  const [providers, setProviders] = useState<ProviderStatus[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [keyInputs, setKeyInputs] = useState<Record<string, string>>({});
+  const [showKey, setShowKey] = useState<Record<string, boolean>>({});
+  const [saving, setSaving] = useState<Record<string, boolean>>({});
+
+  const fetchStatus = async () => {
+    try {
+      const res = await fetch("/api/ai-providers/status");
+      const data = await res.json() as ProviderStatus[];
+      setProviders(data);
+    } catch {
+      toast({ title: "Error", description: "Could not load AI provider status.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { void fetchStatus(); }, []);
+
+  const handleSaveKey = async (provider: "openai" | "gemini") => {
+    const key = keyInputs[provider]?.trim();
+    if (!key || key.length < 8) {
+      toast({ title: "Invalid Key", description: "Please enter a valid API key.", variant: "destructive" });
+      return;
+    }
+    setSaving((p) => ({ ...p, [provider]: true }));
+    try {
+      const res = await fetch(`/api/ai-providers/${provider}/key`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: key }),
+      });
+      if (!res.ok) throw new Error("Save failed");
+      toast({ title: "API Key Saved", description: `${PROVIDER_META[provider].label} is now active as a fallback.` });
+      setKeyInputs((p) => ({ ...p, [provider]: "" }));
+      await fetchStatus();
+    } catch {
+      toast({ title: "Error", description: "Failed to save API key.", variant: "destructive" });
+    } finally {
+      setSaving((p) => ({ ...p, [provider]: false }));
+    }
+  };
+
+  const handleOpenKeyPage = (provider: string) => {
+    window.open(PROVIDER_META[provider]?.keyUrl, "_blank", "noopener,noreferrer");
+  };
+
+  return (
+    <Card className="rounded-sm border-primary/20 bg-card">
+      <CardHeader className="p-4 border-b border-muted">
+        <CardTitle className="text-sm font-mono flex items-center gap-2">
+          <Layers className="h-4 w-4 text-primary" />
+          AI PROVIDERS
+          <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full border border-muted text-muted-foreground font-normal tracking-wider">
+            AUTO-FALLBACK
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 space-y-4">
+        <p className="text-xs text-muted-foreground font-mono">
+          When the primary provider fails, the system automatically tries the next configured one in order.
+        </p>
+
+        {loading ? (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono py-4">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            Loading provider status…
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {providers.map((p, idx) => {
+              const meta = PROVIDER_META[p.provider];
+              if (!meta) return null;
+              const isNvidia = p.provider === "nvidia";
+
+              return (
+                <div key={p.provider} className={cn(
+                  "rounded-sm border p-3 space-y-2 transition-colors",
+                  p.configured ? "border-muted bg-muted/5" : "border-muted/40 bg-muted/5 opacity-70"
+                )}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-mono font-bold text-muted-foreground/50 w-5">#{idx + 1}</span>
+                    <div className={cn("font-mono font-bold text-sm", meta.color)}>{meta.label}</div>
+                    <div className="text-[10px] text-muted-foreground font-mono">{meta.model}</div>
+                    <div className="ml-auto flex items-center gap-1.5">
+                      {p.configured ? (
+                        <div className="flex items-center gap-1 text-[10px] font-mono text-green-400">
+                          <CheckCircle2 className="h-3 w-3" />
+                          CONNECTED
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground/50">
+                          <XCircle className="h-3 w-3" />
+                          NOT CONFIGURED
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {!isNvidia && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <div className="relative flex-1">
+                        <Input
+                          type={showKey[p.provider] ? "text" : "password"}
+                          value={keyInputs[p.provider] ?? ""}
+                          onChange={(e) => setKeyInputs((prev) => ({ ...prev, [p.provider]: e.target.value }))}
+                          placeholder={p.configured ? "Enter new key to update…" : meta.keyHint}
+                          className="font-mono text-xs bg-background border-muted pr-8 h-8"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowKey((prev) => ({ ...prev, [p.provider]: !prev[p.provider] }))}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {showKey[p.provider] ? <EyeOff className="h-3 w-3" /> : <EyeIcon className="h-3 w-3" />}
+                        </button>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleOpenKeyPage(p.provider)}
+                        className="font-mono text-xs border-muted h-8 gap-1 shrink-0"
+                        title={`Get ${meta.label} API key`}
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        GET KEY
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={!keyInputs[p.provider] || saving[p.provider]}
+                        onClick={() => handleSaveKey(p.provider as "openai" | "gemini")}
+                        className="font-mono text-xs h-8 shrink-0"
+                      >
+                        {saving[p.provider] ? <Loader2 className="h-3 w-3 animate-spin" /> : "SAVE"}
+                      </Button>
+                    </div>
+                  )}
+
+                  {isNvidia && (
+                    <p className="text-[10px] text-muted-foreground font-mono">
+                      Configured via environment variable. Primary provider for all AI analysis.
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 function SectionHeader({ icon: Icon, title, badge }: { icon: React.ElementType; title: string; badge?: string }) {
   return (
@@ -330,6 +517,9 @@ export default function SettingsDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* ── AI Providers (full width) ──────────────────────────────────────── */}
+      <AIProvidersCard />
 
       {/* Status summary */}
       <Card className="rounded-sm border-muted/40 bg-muted/10">

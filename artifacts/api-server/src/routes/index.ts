@@ -6,6 +6,7 @@ import signalsRouter from "./signals";
 import watchlistRouter from "./watchlist";
 import agentRouter from "./agent";
 import schedulerRouter from "./scheduler";
+import aiProvidersRouter from "./ai-providers";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(signalsRouter);
 router.use(watchlistRouter);
 router.use(agentRouter);
 router.use(schedulerRouter);
+router.use(aiProvidersRouter);
 
 export default router;

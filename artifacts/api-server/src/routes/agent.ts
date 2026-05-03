@@ -1,8 +1,8 @@
 import { Router, type IRouter } from "express";
-import { nvidia, NVIDIA_MODEL } from "../lib/nvidia";
 import { db } from "@workspace/db";
 import { signals } from "@workspace/db";
 import { computeTechnicals } from "./analysis";
+import { callWithFallback } from "../lib/multi-ai";
 
 const router: IRouter = Router();
 
@@ -49,7 +49,6 @@ router.post("/openai/agent/analyze", async (req, res) => {
     const clampedThreshold = Math.min(90, Math.max(0, Number(confidenceThreshold) || 0));
     const styleKey = ["conservative", "moderate", "aggressive"].includes(style) ? style : "moderate";
 
-    // Get technical analysis
     let techData: any = null;
     try {
       techData = await computeTechnicals(symbol.toUpperCase());
@@ -112,16 +111,13 @@ Respond with this exact JSON structure:
 
 If ${instrumentType} is OPTIONS, suggest specific strike prices and expiries. Only include signals with confidence >= ${clampedThreshold}.`;
 
-    const response = await nvidia.chat.completions.create({
-      model: NVIDIA_MODEL,
-      max_tokens: clampedTokens,
-      messages: [
+    const { content, provider: usedProvider } = await callWithFallback(
+      [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-    });
-
-    const content = response.choices[0]?.message?.content?.trim() ?? "";
+      { maxTokens: clampedTokens }
+    );
 
     let analysisResult: any;
     try {
@@ -132,13 +128,11 @@ If ${instrumentType} is OPTIONS, suggest specific strike prices and expiries. On
       return;
     }
 
-    // Filter by confidence threshold
     const rawSignals: any[] = analysisResult.signals ?? [];
     const filteredSignals = rawSignals.filter(
       (s) => (s.confidence ?? 0) >= clampedThreshold
     );
 
-    // Save to DB if enabled
     const savedSignals = [];
     if (doSaveSignals) {
       const now = new Date();
@@ -211,6 +205,7 @@ If ${instrumentType} is OPTIONS, suggest specific strike prices and expiries. On
         numAfterFilter: filteredSignals.length,
         confidenceThreshold: clampedThreshold,
         savedToDb: doSaveSignals,
+        provider: usedProvider,
       },
     });
   } catch (err) {

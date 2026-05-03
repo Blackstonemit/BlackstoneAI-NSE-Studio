@@ -2,7 +2,7 @@ import { db } from "@workspace/db";
 import { signals } from "@workspace/db";
 import { lt, eq, and } from "drizzle-orm";
 import { logger } from "./logger";
-import { nvidia, NVIDIA_MODEL } from "./nvidia";
+import { callWithFallback } from "./multi-ai";
 import { computeTechnicals } from "../routes/analysis";
 
 function isMarketHoursIST(): boolean {
@@ -112,16 +112,14 @@ Timeframe: INTRADAY
 Respond with exactly this JSON:
 {"action":"BUY"|"SELL"|"EXIT","instrumentType":"STOCK"|"OPTIONS"|"FUTURES","displayText":"e.g. BUY NIFTY @ 22500","entryPrice":number|null,"targetPrice":number|null,"stopLoss":number|null,"confidence":0-100,"rationale":"1 sentence"}`;
 
-      const response = await nvidia.chat.completions.create({
-        model: NVIDIA_MODEL,
-        max_tokens: 512,
-        messages: [
+      const { content } = await callWithFallback(
+        [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-      });
+        { maxTokens: 512 }
+      );
 
-      const content = response.choices[0]?.message?.content?.trim() ?? "";
       let sig: Record<string, unknown>;
       try {
         const m = content.match(/\{[\s\S]*\}/);
