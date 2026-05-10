@@ -264,6 +264,44 @@ export const GetTechnicalAnalysisResponse = zod.object({
       d: zod.number(),
     })
     .nullish(),
+  adx: zod.number().nullish().describe("Average Directional Index (14)"),
+  obv: zod.number().nullish().describe("On Balance Volume"),
+  vwap: zod.number().nullish().describe("Volume Weighted Average Price"),
+  superTrend: zod
+    .object({
+      value: zod.number(),
+      direction: zod.enum(["UP", "DOWN"]),
+    })
+    .nullish(),
+  fibonacci: zod
+    .object({
+      high: zod.number(),
+      low: zod.number(),
+      r236: zod.number(),
+      r382: zod.number(),
+      r500: zod.number(),
+      r618: zod.number(),
+      r786: zod.number(),
+    })
+    .nullish(),
+  indiaVix: zod.number().nullish().describe("India VIX (fear gauge)"),
+  sessionPOC: zod
+    .number()
+    .nullish()
+    .describe("Session Point of Control (highest volume price level)"),
+  aroon: zod
+    .object({
+      up: zod.number(),
+      down: zod.number(),
+    })
+    .nullish(),
+  stc: zod.number().nullish().describe("Schaff Trend Cycle (0-100)"),
+  klinger: zod
+    .object({
+      kvo: zod.number(),
+      signal: zod.number(),
+    })
+    .nullish(),
   trend: zod.enum([
     "STRONG_BULLISH",
     "BULLISH",

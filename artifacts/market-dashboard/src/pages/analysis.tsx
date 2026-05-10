@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Loader2, BrainCircuit, Cpu, TrendingUp, TrendingDown, ShieldAlert, X, Sliders } from "lucide-react";
+import { Search, Loader2, BrainCircuit, Cpu, TrendingUp, TrendingDown, ShieldAlert, X, Sliders, Activity, BarChart3, Zap, Waves } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { loadSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,19 @@ type AgentResult = {
   riskAssessment: string;
   generatedAt: string;
 };
+
+function fmt(v: number | null | undefined, dec = 2) {
+  return v != null ? v.toFixed(dec) : "N/A";
+}
+
+function StatRow({ label, value, color }: { label: string; value: string; color?: string }) {
+  return (
+    <div className="flex justify-between items-center border-b border-muted pb-2 last:border-0 last:pb-0">
+      <span className="font-mono text-sm text-muted-foreground">{label}</span>
+      <span className={cn("font-mono font-bold", color)}>{value}</span>
+    </div>
+  );
+}
 
 export default function AnalysisBoard() {
   const agentSettings = loadSettings();
@@ -66,8 +79,7 @@ export default function AnalysisBoard() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchInput.trim()) {
-      const s = searchInput.trim().toUpperCase();
-      setSymbol(s);
+      setSymbol(searchInput.trim().toUpperCase());
       setAgentResult(null);
     }
   };
@@ -78,9 +90,7 @@ export default function AnalysisBoard() {
       setSymbol(targetSymbol);
       setAgentResult(null);
     }
-
     const settings = loadSettings();
-
     runAgent.mutate({
       data: {
         symbol: targetSymbol,
@@ -104,7 +114,6 @@ export default function AnalysisBoard() {
     });
   };
 
-  // Auto-run on mount if enabled in settings
   useEffect(() => {
     if (agentSettings.agentAutoRun && !autoRanOnce) {
       setAutoRanOnce(true);
@@ -123,6 +132,7 @@ export default function AnalysisBoard() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3 flex-wrap">
           <h1 className="text-2xl font-bold tracking-tight font-mono">TECHNICAL ANALYSIS</h1>
@@ -133,6 +143,17 @@ export default function AnalysisBoard() {
             countdown={countdown}
             onRefresh={refresh}
           />
+          {analysis?.indiaVix != null && (
+            <div className={cn(
+              "flex items-center gap-1.5 text-xs font-mono border rounded-sm px-2 py-1",
+              analysis.indiaVix > 20 ? "border-destructive/40 text-destructive bg-destructive/5" :
+              analysis.indiaVix > 15 ? "border-warning/40 text-warning bg-warning/5" :
+              "border-success/40 text-success bg-success/5"
+            )}>
+              <Waves className="h-3 w-3" />
+              VIX {analysis.indiaVix.toFixed(2)}
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2 items-center flex-wrap">
@@ -175,7 +196,6 @@ export default function AnalysisBoard() {
             <span className="text-muted-foreground">NVIDIA</span>
           </div>
 
-          {/* Agent config summary badge */}
           <div className={cn(
             "hidden sm:flex items-center gap-1 text-[10px] font-mono border rounded-sm px-2 py-1",
             styleColors[agentSettings.agentStyle] ?? "border-muted text-muted-foreground"
@@ -287,7 +307,6 @@ export default function AnalysisBoard() {
               </div>
             </div>
 
-            {/* Signals */}
             {filteredSignals.length > 0 ? (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -347,7 +366,7 @@ export default function AnalysisBoard() {
       {/* Technical indicators */}
       {loadingAnalysis ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-64 w-full" />)}
+          {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-64 w-full" />)}
         </div>
       ) : analysisError || !analysis ? (
         <div className="py-20 text-center border border-muted border-dashed rounded-sm bg-card">
@@ -358,13 +377,15 @@ export default function AnalysisBoard() {
         </div>
       ) : (
         <div className="space-y-6">
+
+          {/* ── Row 1: Signal summary ─────────────────────────────────────────── */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card className="rounded-sm border-muted col-span-1 md:col-span-2 bg-card">
               <CardContent className="p-6 flex flex-col justify-center h-full">
                 <div className="text-sm font-mono text-muted-foreground mb-2">OVERALL SIGNAL</div>
                 <div className="flex items-center gap-4">
                   <div className={cn("text-4xl font-bold font-mono tracking-tight",
-                    analysis.overallSignal === "BUY" ? "text-success" :
+                    analysis.overallSignal === "BUY"  ? "text-success" :
                     analysis.overallSignal === "SELL" ? "text-destructive" : "text-warning"
                   )}>
                     {analysis.overallSignal}
@@ -372,8 +393,8 @@ export default function AnalysisBoard() {
                   <div className="flex-1">
                     <div className="text-xs font-mono text-muted-foreground mb-1">STRENGTH: {analysis.signalStrength}%</div>
                     <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div className={cn("h-full",
-                        analysis.overallSignal === "BUY" ? "bg-success" :
+                      <div className={cn("h-full transition-all",
+                        analysis.overallSignal === "BUY"  ? "bg-success" :
                         analysis.overallSignal === "SELL" ? "bg-destructive" : "bg-warning"
                       )} style={{ width: `${analysis.signalStrength}%` }} />
                     </div>
@@ -402,32 +423,30 @@ export default function AnalysisBoard() {
                   analysis.rsi && analysis.rsi > 70 ? "text-destructive" :
                   analysis.rsi && analysis.rsi < 30 ? "text-success" : "text-foreground"
                 )}>
-                  {analysis.rsi?.toFixed(2) || "N/A"}
+                  {fmt(analysis.rsi, 2)}
                 </div>
                 <div className="text-xs font-mono text-muted-foreground mt-1">
                   {analysis.rsi && analysis.rsi > 70 ? "OVERBOUGHT" :
-                   analysis.rsi && analysis.rsi < 30 ? "OVERSOLD" : "NEUTRAL"}
+                   analysis.rsi && analysis.rsi < 30 ? "OVERSOLD"   : "NEUTRAL"}
                 </div>
               </CardContent>
             </Card>
           </div>
 
+          {/* ── Row 2: MACD + Moving Averages ────────────────────────────────── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="rounded-sm border-muted bg-card">
               <CardHeader className="p-4 border-b border-muted">
                 <CardTitle className="text-sm font-mono">MACD (12, 26, 9)</CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-4">
-                {[
-                  { label: "MACD LINE", val: analysis.macd?.macd.toFixed(4) },
-                  { label: "SIGNAL LINE", val: analysis.macd?.signal.toFixed(4) },
-                  { label: "HISTOGRAM", val: analysis.macd?.histogram.toFixed(4), color: (analysis.macd?.histogram ?? 0) > 0 ? "text-success" : "text-destructive" },
-                ].map((r) => (
-                  <div key={r.label} className="flex justify-between items-center border-b border-muted pb-2 last:border-0 last:pb-0">
-                    <span className="font-mono text-sm text-muted-foreground">{r.label}</span>
-                    <span className={cn("font-mono font-bold", r.color)}>{r.val || "N/A"}</span>
-                  </div>
-                ))}
+                <StatRow label="MACD LINE"   value={fmt(analysis.macd?.macd, 4)} />
+                <StatRow label="SIGNAL LINE" value={fmt(analysis.macd?.signal, 4)} />
+                <StatRow
+                  label="HISTOGRAM"
+                  value={fmt(analysis.macd?.histogram, 4)}
+                  color={(analysis.macd?.histogram ?? 0) > 0 ? "text-success" : "text-destructive"}
+                />
               </CardContent>
             </Card>
 
@@ -436,40 +455,318 @@ export default function AnalysisBoard() {
                 <CardTitle className="text-sm font-mono">MOVING AVERAGES</CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-4">
+                <StatRow label="SMA 20"  value={fmt(analysis.sma20)} />
+                <StatRow label="SMA 50"  value={fmt(analysis.sma50)} />
+                <StatRow label="SMA 200" value={fmt(analysis.sma200)} />
+                <StatRow label="EMA 9"   value={fmt(analysis.ema9)} />
+                <StatRow label="EMA 21"  value={fmt(analysis.ema21)} />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* ── Row 3: Bollinger Bands ────────────────────────────────────────── */}
+          <Card className="rounded-sm border-muted bg-card">
+            <CardHeader className="p-4 border-b border-muted">
+              <CardTitle className="text-sm font-mono">BOLLINGER BANDS (20, 2)</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-3 gap-6 text-center">
                 {[
-                  { label: "SMA 20",  val: analysis.sma20?.toFixed(2) },
-                  { label: "SMA 50",  val: analysis.sma50?.toFixed(2) },
-                  { label: "SMA 200", val: analysis.sma200?.toFixed(2) },
-                  { label: "EMA 9",   val: analysis.ema9?.toFixed(2) },
-                ].map((r) => (
-                  <div key={r.label} className="flex justify-between items-center border-b border-muted pb-2 last:border-0 last:pb-0">
-                    <span className="font-mono text-sm text-muted-foreground">{r.label}</span>
-                    <span className="font-mono font-bold">{r.val || "N/A"}</span>
+                  { label: "UPPER BAND",    val: fmt(analysis.bollingerBands?.upper),  border: "border-muted" },
+                  { label: "MIDDLE (SMA20)", val: fmt(analysis.bollingerBands?.middle), border: "border-primary/20" },
+                  { label: "LOWER BAND",    val: fmt(analysis.bollingerBands?.lower),  border: "border-muted" },
+                ].map((b) => (
+                  <div key={b.label} className={cn("bg-muted/20 p-4 rounded-sm border", b.border)}>
+                    <div className="text-xs font-mono text-muted-foreground mb-2">{b.label}</div>
+                    <div className="font-mono font-bold text-lg">{b.val}</div>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ── Section label ─────────────────────────────────────────────────── */}
+          <div className="flex items-center gap-3 pt-2">
+            <Activity className="h-4 w-4 text-primary" />
+            <span className="text-xs font-mono font-bold text-primary tracking-widest">ADVANCED INDICATORS</span>
+            <div className="flex-1 h-px bg-primary/20" />
+          </div>
+
+          {/* ── Row 4: SuperTrend + Aroon + ADX ──────────────────────────────── */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* SuperTrend */}
+            <Card className="rounded-sm border-muted bg-card">
+              <CardHeader className="p-4 border-b border-muted">
+                <CardTitle className="text-sm font-mono flex items-center gap-2">
+                  <Zap className="h-3.5 w-3.5 text-primary" />
+                  SUPERTREND (7, 3)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-3">
+                {analysis.superTrend ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-sm text-muted-foreground">DIRECTION</span>
+                      <Badge variant="outline" className={cn(
+                        "font-mono text-xs border-0 px-2 py-0.5",
+                        analysis.superTrend.direction === "UP" ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive"
+                      )}>
+                        {analysis.superTrend.direction === "UP" ? "▲ BULLISH" : "▼ BEARISH"}
+                      </Badge>
+                    </div>
+                    <StatRow label="LEVEL" value={fmt(analysis.superTrend.value)} />
+                    <div className="text-xs font-mono text-muted-foreground pt-1">
+                      Price {analysis.superTrend.direction === "UP" ? "above" : "below"} SuperTrend band
+                    </div>
+                  </>
+                ) : <div className="text-sm font-mono text-muted-foreground">Insufficient data</div>}
               </CardContent>
             </Card>
 
-            <Card className="rounded-sm border-muted bg-card md:col-span-2">
+            {/* Aroon */}
+            <Card className="rounded-sm border-muted bg-card">
               <CardHeader className="p-4 border-b border-muted">
-                <CardTitle className="text-sm font-mono">BOLLINGER BANDS (20, 2)</CardTitle>
+                <CardTitle className="text-sm font-mono">AROON (14)</CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-3 gap-6 text-center">
-                  {[
-                    { label: "UPPER BAND", val: analysis.bollingerBands?.upper.toFixed(2), border: "border-muted" },
-                    { label: "MIDDLE (SMA 20)", val: analysis.bollingerBands?.middle.toFixed(2), border: "border-primary/20" },
-                    { label: "LOWER BAND", val: analysis.bollingerBands?.lower.toFixed(2), border: "border-muted" },
-                  ].map((b) => (
-                    <div key={b.label} className={cn("bg-muted/20 p-4 rounded-sm border", b.border)}>
-                      <div className="text-xs font-mono text-muted-foreground mb-2">{b.label}</div>
-                      <div className="font-mono font-bold text-lg">{b.val || "N/A"}</div>
+              <CardContent className="p-6 space-y-3">
+                {analysis.aroon ? (
+                  <>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-mono text-sm text-muted-foreground">AROON UP</span>
+                        <span className={cn("font-mono font-bold", analysis.aroon.up > 70 ? "text-success" : "text-foreground")}>
+                          {analysis.aroon.up}
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-success" style={{ width: `${analysis.aroon.up}%` }} />
+                      </div>
                     </div>
-                  ))}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-mono text-sm text-muted-foreground">AROON DOWN</span>
+                        <span className={cn("font-mono font-bold", analysis.aroon.down > 70 ? "text-destructive" : "text-foreground")}>
+                          {analysis.aroon.down}
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-destructive" style={{ width: `${analysis.aroon.down}%` }} />
+                      </div>
+                    </div>
+                    <div className="text-xs font-mono text-muted-foreground pt-1">
+                      {analysis.aroon.up > analysis.aroon.down ? "Uptrend dominant" : "Downtrend dominant"}
+                    </div>
+                  </>
+                ) : <div className="text-sm font-mono text-muted-foreground">Insufficient data</div>}
+              </CardContent>
+            </Card>
+
+            {/* ADX + Stochastic */}
+            <Card className="rounded-sm border-muted bg-card">
+              <CardHeader className="p-4 border-b border-muted">
+                <CardTitle className="text-sm font-mono">ADX & STOCHASTIC</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-mono text-sm text-muted-foreground">ADX (14)</span>
+                    <span className={cn("font-mono font-bold",
+                      analysis.adx != null && analysis.adx > 40 ? "text-primary" :
+                      analysis.adx != null && analysis.adx > 25 ? "text-success" : "text-muted-foreground"
+                    )}>
+                      {analysis.adx != null ? analysis.adx.toFixed(1) : "N/A"}
+                    </span>
+                  </div>
+                  {analysis.adx != null && (
+                    <div className="text-xs font-mono text-muted-foreground">
+                      {analysis.adx > 40 ? "VERY STRONG TREND" : analysis.adx > 25 ? "STRONG TREND" : analysis.adx > 20 ? "MODERATE TREND" : "WEAK / RANGING"}
+                    </div>
+                  )}
+                </div>
+                <div className="border-t border-muted pt-4 space-y-2">
+                  <StatRow
+                    label="STOCH %K"
+                    value={fmt(analysis.stochastic?.k, 1)}
+                    color={
+                      analysis.stochastic && analysis.stochastic.k > 80 ? "text-destructive" :
+                      analysis.stochastic && analysis.stochastic.k < 20 ? "text-success" : undefined
+                    }
+                  />
+                  <StatRow label="STOCH %D" value={fmt(analysis.stochastic?.d, 1)} />
+                  <StatRow label="ATR (14)"  value={fmt(analysis.atr)} />
                 </div>
               </CardContent>
             </Card>
           </div>
+
+          {/* ── Row 5: STC + Klinger | Volume indicators ─────────────────────── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* STC + Klinger */}
+            <Card className="rounded-sm border-muted bg-card">
+              <CardHeader className="p-4 border-b border-muted">
+                <CardTitle className="text-sm font-mono flex items-center gap-2">
+                  <BarChart3 className="h-3.5 w-3.5 text-primary" />
+                  MOMENTUM OSCILLATORS
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                {/* STC */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-mono text-sm text-muted-foreground">STC (23, 50, 10)</span>
+                    <span className={cn("font-mono font-bold text-lg",
+                      analysis.stc != null && analysis.stc > 75 ? "text-success" :
+                      analysis.stc != null && analysis.stc < 25 ? "text-destructive" : "text-foreground"
+                    )}>
+                      {analysis.stc != null ? analysis.stc.toFixed(1) : "N/A"}
+                    </span>
+                  </div>
+                  {analysis.stc != null && (
+                    <>
+                      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                        <div className={cn("h-full transition-all",
+                          analysis.stc > 75 ? "bg-success" :
+                          analysis.stc < 25 ? "bg-destructive" : "bg-warning"
+                        )} style={{ width: `${analysis.stc}%` }} />
+                      </div>
+                      <div className="text-xs font-mono text-muted-foreground">
+                        {analysis.stc > 75 ? "BULLISH MOMENTUM" :
+                         analysis.stc < 25 ? "BEARISH MOMENTUM" : "NEUTRAL"}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Klinger */}
+                <div className="border-t border-muted pt-4 space-y-3">
+                  <div className="text-xs font-mono text-muted-foreground font-bold tracking-wider">KLINGER (34, 55, 13)</div>
+                  {analysis.klinger ? (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <span className="font-mono text-sm text-muted-foreground">KVO</span>
+                        <span className={cn("font-mono font-bold",
+                          analysis.klinger.kvo > analysis.klinger.signal ? "text-success" : "text-destructive"
+                        )}>
+                          {analysis.klinger.kvo.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-mono text-sm text-muted-foreground">SIGNAL</span>
+                        <span className="font-mono font-bold">{analysis.klinger.signal.toLocaleString()}</span>
+                      </div>
+                      <div className="text-xs font-mono text-muted-foreground">
+                        {analysis.klinger.kvo > analysis.klinger.signal ? "KVO above signal — bullish" : "KVO below signal — bearish"}
+                      </div>
+                    </>
+                  ) : <div className="text-sm font-mono text-muted-foreground">Insufficient data (needs 60+ bars)</div>}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* VWAP + OBV + Session POC */}
+            <Card className="rounded-sm border-muted bg-card">
+              <CardHeader className="p-4 border-b border-muted">
+                <CardTitle className="text-sm font-mono flex items-center gap-2">
+                  <BarChart3 className="h-3.5 w-3.5 text-primary" />
+                  VOLUME INDICATORS
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <StatRow label="VWAP" value={fmt(analysis.vwap)} />
+                <StatRow label="OBV" value={analysis.obv != null ? analysis.obv.toLocaleString() : "N/A"} />
+                <StatRow label="SESSION POC" value={fmt(analysis.sessionPOC)} />
+                {analysis.vwap != null && (
+                  <div className="pt-2 border-t border-muted">
+                    <div className="text-xs font-mono text-muted-foreground">
+                      VWAP acts as dynamic support/resistance. Price {
+                        analysis.sma20 && analysis.vwap
+                          ? analysis.sma20 > analysis.vwap ? "above VWAP (bullish bias)" : "below VWAP (bearish bias)"
+                          : "relative to VWAP"
+                      }
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* ── Row 6: Fibonacci Retracements ────────────────────────────────── */}
+          {analysis.fibonacci && (
+            <Card className="rounded-sm border-muted bg-card">
+              <CardHeader className="p-4 border-b border-muted">
+                <CardTitle className="text-sm font-mono">FIBONACCI RETRACEMENT LEVELS (50-bar range)</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-3 md:grid-cols-7 gap-3 text-center">
+                  {[
+                    { label: "HIGH",  val: fmt(analysis.fibonacci.high),  border: "border-success/30", text: "text-success" },
+                    { label: "78.6%", val: fmt(analysis.fibonacci.r786),  border: "border-muted", text: "" },
+                    { label: "61.8%", val: fmt(analysis.fibonacci.r618),  border: "border-primary/30", text: "text-primary" },
+                    { label: "50.0%", val: fmt(analysis.fibonacci.r500),  border: "border-primary/20", text: "text-primary" },
+                    { label: "38.2%", val: fmt(analysis.fibonacci.r382),  border: "border-primary/30", text: "text-primary" },
+                    { label: "23.6%", val: fmt(analysis.fibonacci.r236),  border: "border-muted", text: "" },
+                    { label: "LOW",   val: fmt(analysis.fibonacci.low),   border: "border-destructive/30", text: "text-destructive" },
+                  ].map((f) => (
+                    <div key={f.label} className={cn("bg-muted/20 p-3 rounded-sm border", f.border)}>
+                      <div className="text-[10px] font-mono text-muted-foreground mb-1">{f.label}</div>
+                      <div className={cn("font-mono font-bold text-sm", f.text)}>{f.val}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 text-xs font-mono text-muted-foreground">
+                  Key support/resistance: 38.2%, 50%, 61.8% are the most watched retracement levels
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ── Row 7: India VIX gauge ────────────────────────────────────────── */}
+          {analysis.indiaVix != null && (
+            <Card className="rounded-sm border-muted bg-card">
+              <CardHeader className="p-4 border-b border-muted">
+                <CardTitle className="text-sm font-mono flex items-center gap-2">
+                  <Waves className="h-3.5 w-3.5 text-primary" />
+                  INDIA VIX — VOLATILITY GAUGE
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-8">
+                  <div>
+                    <div className={cn("text-5xl font-bold font-mono",
+                      analysis.indiaVix > 20 ? "text-destructive" :
+                      analysis.indiaVix > 15 ? "text-warning" : "text-success"
+                    )}>
+                      {analysis.indiaVix.toFixed(2)}
+                    </div>
+                    <div className="text-xs font-mono text-muted-foreground mt-1">
+                      {analysis.indiaVix > 25 ? "EXTREME FEAR" :
+                       analysis.indiaVix > 20 ? "HIGH FEAR" :
+                       analysis.indiaVix > 15 ? "ELEVATED" :
+                       analysis.indiaVix > 12 ? "NORMAL" : "LOW VOLATILITY"}
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div className="flex justify-between text-xs font-mono text-muted-foreground">
+                      <span>LOW (&lt;12)</span>
+                      <span>NORMAL (12–15)</span>
+                      <span>HIGH (&gt;20)</span>
+                    </div>
+                    <div className="relative h-3 w-full bg-muted rounded-full overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-success via-warning to-destructive" />
+                      <div
+                        className="absolute top-0 h-full w-1 bg-white rounded-full shadow"
+                        style={{ left: `${Math.min(Math.max(((analysis.indiaVix - 8) / 22) * 100, 0), 100)}%` }}
+                      />
+                    </div>
+                    <div className="text-xs font-mono text-muted-foreground">
+                      India VIX measures expected market volatility over the next 30 days. Above 20 = options expensive.
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
         </div>
       )}
     </div>

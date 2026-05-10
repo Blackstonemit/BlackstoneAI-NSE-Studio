@@ -137,6 +137,39 @@ export interface StochasticValues {
   d: number;
 }
 
+export type SuperTrendValuesDirection =
+  (typeof SuperTrendValuesDirection)[keyof typeof SuperTrendValuesDirection];
+
+export const SuperTrendValuesDirection = {
+  UP: "UP",
+  DOWN: "DOWN",
+} as const;
+
+export interface SuperTrendValues {
+  value: number;
+  direction: SuperTrendValuesDirection;
+}
+
+export interface FibonacciLevels {
+  high: number;
+  low: number;
+  r236: number;
+  r382: number;
+  r500: number;
+  r618: number;
+  r786: number;
+}
+
+export interface AroonValues {
+  up: number;
+  down: number;
+}
+
+export interface KlingerValues {
+  kvo: number;
+  signal: number;
+}
+
 export interface TechnicalAnalysis {
   symbol: string;
   interval: string;
@@ -151,6 +184,22 @@ export interface TechnicalAnalysis {
   ema21?: number | null;
   atr?: number | null;
   stochastic?: StochasticValues | null;
+  /** Average Directional Index (14) */
+  adx?: number | null;
+  /** On Balance Volume */
+  obv?: number | null;
+  /** Volume Weighted Average Price */
+  vwap?: number | null;
+  superTrend?: SuperTrendValues | null;
+  fibonacci?: FibonacciLevels | null;
+  /** India VIX (fear gauge) */
+  indiaVix?: number | null;
+  /** Session Point of Control (highest volume price level) */
+  sessionPOC?: number | null;
+  aroon?: AroonValues | null;
+  /** Schaff Trend Cycle (0-100) */
+  stc?: number | null;
+  klinger?: KlingerValues | null;
   trend: TechnicalAnalysisTrend;
   overallSignal: TechnicalAnalysisOverallSignal;
   /** 0-100 confidence score */

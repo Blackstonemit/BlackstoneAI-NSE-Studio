@@ -572,6 +572,42 @@ components:
         stochastic:
           $ref: "#/components/schemas/StochasticValues"
           nullable: true
+        adx:
+          type: number
+          nullable: true
+          description: Average Directional Index (14)
+        obv:
+          type: number
+          nullable: true
+          description: On Balance Volume
+        vwap:
+          type: number
+          nullable: true
+          description: Volume Weighted Average Price
+        superTrend:
+          $ref: "#/components/schemas/SuperTrendValues"
+          nullable: true
+        fibonacci:
+          $ref: "#/components/schemas/FibonacciLevels"
+          nullable: true
+        indiaVix:
+          type: number
+          nullable: true
+          description: India VIX (fear gauge)
+        sessionPOC:
+          type: number
+          nullable: true
+          description: Session Point of Control (highest volume price level)
+        aroon:
+          $ref: "#/components/schemas/AroonValues"
+          nullable: true
+        stc:
+          type: number
+          nullable: true
+          description: Schaff Trend Cycle (0-100)
+        klinger:
+          $ref: "#/components/schemas/KlingerValues"
+          nullable: true
         trend:
           type: string
           enum: [STRONG_BULLISH, BULLISH, NEUTRAL, BEARISH, STRONG_BEARISH]
@@ -613,6 +649,53 @@ components:
         d:
           type: number
       required: [k, d]
+
+    SuperTrendValues:
+      type: object
+      properties:
+        value:
+          type: number
+        direction:
+          type: string
+          enum: [UP, DOWN]
+      required: [value, direction]
+
+    FibonacciLevels:
+      type: object
+      properties:
+        high:
+          type: number
+        low:
+          type: number
+        r236:
+          type: number
+        r382:
+          type: number
+        r500:
+          type: number
+        r618:
+          type: number
+        r786:
+          type: number
+      required: [high, low, r236, r382, r500, r618, r786]
+
+    AroonValues:
+      type: object
+      properties:
+        up:
+          type: number
+        down:
+          type: number
+      required: [up, down]
+
+    KlingerValues:
+      type: object
+      properties:
+        kvo:
+          type: number
+        signal:
+          type: number
+      required: [kvo, signal]
 
     AnalysisSummary:
       type: object

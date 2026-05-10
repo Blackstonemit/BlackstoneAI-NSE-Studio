@@ -5,9 +5,13 @@
  * NSE/BSE AI Trading Signals API
  * OpenAPI spec version: 0.1.0
  */
+import type { AroonValues } from "./aroonValues";
 import type { BollingerBands } from "./bollingerBands";
+import type { FibonacciLevels } from "./fibonacciLevels";
+import type { KlingerValues } from "./klingerValues";
 import type { MACDValues } from "./mACDValues";
 import type { StochasticValues } from "./stochasticValues";
+import type { SuperTrendValues } from "./superTrendValues";
 import type { TechnicalAnalysisOverallSignal } from "./technicalAnalysisOverallSignal";
 import type { TechnicalAnalysisTrend } from "./technicalAnalysisTrend";
 
@@ -25,6 +29,22 @@ export interface TechnicalAnalysis {
   ema21?: number | null;
   atr?: number | null;
   stochastic?: StochasticValues | null;
+  /** Average Directional Index (14) */
+  adx?: number | null;
+  /** On Balance Volume */
+  obv?: number | null;
+  /** Volume Weighted Average Price */
+  vwap?: number | null;
+  superTrend?: SuperTrendValues | null;
+  fibonacci?: FibonacciLevels | null;
+  /** India VIX (fear gauge) */
+  indiaVix?: number | null;
+  /** Session Point of Control (highest volume price level) */
+  sessionPOC?: number | null;
+  aroon?: AroonValues | null;
+  /** Schaff Trend Cycle (0-100) */
+  stc?: number | null;
+  klinger?: KlingerValues | null;
   trend: TechnicalAnalysisTrend;
   overallSignal: TechnicalAnalysisOverallSignal;
   /** 0-100 confidence score */
