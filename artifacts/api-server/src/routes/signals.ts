@@ -3,7 +3,7 @@ import { GetSignalsQueryParams, GetSignalParams } from "@workspace/api-zod";
 import { db } from "@workspace/db";
 import { signals } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
-import { nvidia, NVIDIA_MODEL } from "../lib/nvidia";
+import { callWithFallback } from "../lib/multi-ai";
 import { computeTechnicals } from "./analysis";
 
 const router: IRouter = Router();
@@ -119,16 +119,13 @@ Generate a JSON signal with this exact structure:
   "rationale": "concise 1-2 sentence rationale"
 }`;
 
-        const response = await nvidia.chat.completions.create({
-          model: NVIDIA_MODEL,
-          max_tokens: 1024,
-          messages: [
+        const { content } = await callWithFallback(
+          [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
           ],
-        });
-
-        const content = response.choices[0]?.message?.content?.trim() ?? "";
+          { maxTokens: 1024 }
+        );
         let signalData: any;
 
         try {

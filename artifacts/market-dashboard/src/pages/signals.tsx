@@ -153,7 +153,7 @@ export default function SignalsBoard() {
           />
           <div className="flex items-center gap-1 text-xs font-mono text-muted-foreground border border-muted rounded-sm px-2 py-1">
             <Cpu className="h-3 w-3 text-success" />
-            NVIDIA QWEN
+            OPENAI GPT-5.4
           </div>
           <Button 
             onClick={handleGenerate} 

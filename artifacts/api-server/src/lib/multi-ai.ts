@@ -4,7 +4,7 @@ import { db, providerSettings } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "./logger";
 
-export type AIProvider = "nvidia" | "openai" | "gemini" | "claude";
+export type AIProvider = "nvidia" | "openai" | "claude" | "gemini";
 
 export type AIMessage = { role: "system" | "user" | "assistant"; content: string };
 
@@ -16,9 +16,14 @@ export type AICompletionResult = {
 const NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1";
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/";
 
+// When the Replit AI Integration is provisioned, use gpt-5.4 via the proxy.
+// Otherwise fall back to gpt-4o-mini with a user-supplied key.
+const REPLIT_OPENAI_BASE_URL = process.env["AI_INTEGRATIONS_OPENAI_BASE_URL"];
+const OPENAI_MODEL = REPLIT_OPENAI_BASE_URL ? "gpt-5.4" : "gpt-4o-mini";
+
 const PROVIDER_MODELS: Record<AIProvider, string> = {
   nvidia: process.env["NVIDIA_MODEL"] ?? "qwen/qwen3.5-122b-a10b",
-  openai: "gpt-4o-mini",
+  openai: OPENAI_MODEL,
   gemini: "gemini-1.5-flash",
   claude: "claude-3-5-haiku-20241022",
 };
@@ -30,12 +35,32 @@ function makeOpenAIClient(provider: Exclude<AIProvider, "claude">, apiKey: strin
   if (provider === "gemini") {
     return new OpenAI({ apiKey, baseURL: GEMINI_BASE_URL });
   }
+  // openai — use Replit proxy if available, otherwise direct
+  if (REPLIT_OPENAI_BASE_URL) {
+    return new OpenAI({ apiKey, baseURL: REPLIT_OPENAI_BASE_URL });
+  }
   return new OpenAI({ apiKey });
 }
 
 async function getProviderKey(provider: AIProvider): Promise<string | null> {
   if (provider === "nvidia") {
     return process.env["NVIDIA_API_KEY"] ?? null;
+  }
+  if (provider === "openai") {
+    // Replit AI Integration env var takes priority (no user API key required)
+    const replitKey = process.env["AI_INTEGRATIONS_OPENAI_API_KEY"];
+    if (replitKey) return replitKey;
+    // Fall back to user-supplied key stored in DB
+    try {
+      const [row] = await db
+        .select()
+        .from(providerSettings)
+        .where(eq(providerSettings.provider, provider));
+      if (!row?.enabled || !row?.apiKey) return null;
+      return row.apiKey;
+    } catch {
+      return null;
+    }
   }
   try {
     const [row] = await db
@@ -77,7 +102,8 @@ export async function callWithFallback(
   messages: AIMessage[],
   options: { maxTokens?: number } = {}
 ): Promise<AICompletionResult> {
-  const order: AIProvider[] = ["nvidia", "openai", "claude", "gemini"];
+  // Try openai (Replit integration) first, then nvidia, then others
+  const order: AIProvider[] = ["openai", "nvidia", "claude", "gemini"];
   const maxTokens = options.maxTokens ?? 2048;
 
   for (const provider of order) {
@@ -95,11 +121,20 @@ export async function callWithFallback(
       } else {
         const client = makeOpenAIClient(provider, apiKey);
         const model = PROVIDER_MODELS[provider];
-        const response = await client.chat.completions.create({
-          model,
-          max_tokens: maxTokens,
-          messages: messages as Parameters<typeof client.chat.completions.create>[0]["messages"],
-        });
+        // gpt-5.x models use max_completion_tokens, older use max_tokens
+        const isGpt5 = model.startsWith("gpt-5") || model.startsWith("o4") || model.startsWith("o3");
+        const completionRequest = isGpt5
+          ? {
+              model,
+              max_completion_tokens: maxTokens,
+              messages: messages as Parameters<typeof client.chat.completions.create>[0]["messages"],
+            }
+          : {
+              model,
+              max_tokens: maxTokens,
+              messages: messages as Parameters<typeof client.chat.completions.create>[0]["messages"],
+            };
+        const response = await client.chat.completions.create(completionRequest);
         content = response.choices[0]?.message?.content?.trim() ?? "";
         if (!content) throw new Error("Empty response");
       }
@@ -121,11 +156,21 @@ export async function getProvidersStatus(): Promise<
   const dbMap = new Map(dbRows.map((r) => [r.provider, r]));
 
   const nvidiaKey = process.env["NVIDIA_API_KEY"];
-  const providers: AIProvider[] = ["nvidia", "openai", "claude", "gemini"];
+  const replitOpenaiKey = process.env["AI_INTEGRATIONS_OPENAI_API_KEY"];
+  const providers: AIProvider[] = ["openai", "nvidia", "claude", "gemini"];
 
   return providers.map((p, idx) => {
+    if (p === "openai") {
+      const row = dbMap.get(p);
+      return {
+        provider: p,
+        configured: !!(replitOpenaiKey || row?.apiKey),
+        enabled: true,
+        isDefault: idx === 0,
+      };
+    }
     if (p === "nvidia") {
-      return { provider: p, configured: !!nvidiaKey, enabled: true, isDefault: idx === 0 };
+      return { provider: p, configured: !!nvidiaKey, enabled: true, isDefault: false };
     }
     const row = dbMap.get(p);
     return {

@@ -17,9 +17,22 @@ import {
 
 const router: IRouter = Router();
 
-// NSE symbol suffix map
+// Index symbols that need special Yahoo Finance tickers
+const INDEX_YAHOO_MAP: Record<string, string> = {
+  NIFTY: "^NSEI",
+  NIFTY50: "^NSEI",
+  BANKNIFTY: "^NSEBANK",
+  NIFTYBANK: "^NSEBANK",
+  SENSEX: "^BSESN",
+  NIFTYMID: "^NSEMDCP50",
+  NIFTYIT: "^CNXIT",
+};
+
+// NSE/BSE symbol → Yahoo Finance symbol
 function toYahooSymbol(symbol: string, exchange: string = "NSE"): string {
-  if (symbol.includes(".")) return symbol;
+  if (symbol.includes(".") || symbol.startsWith("^")) return symbol;
+  const upper = symbol.toUpperCase();
+  if (INDEX_YAHOO_MAP[upper]) return INDEX_YAHOO_MAP[upper];
   const suffix = exchange === "BSE" ? ".BO" : ".NS";
   return `${symbol}${suffix}`;
 }
