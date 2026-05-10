@@ -3,7 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build as esbuild } from "esbuild";
 import esbuildPluginPino from "esbuild-plugin-pino";
-import { rm } from "node:fs/promises";
+import { rm, cp } from "node:fs/promises";
+import { execSync } from "node:child_process";
 
 // Plugins (e.g. 'esbuild-plugin-pino') may use `require` to resolve dependencies
 globalThis.require = createRequire(import.meta.url);
@@ -14,6 +15,31 @@ async function buildAll() {
   const distDir = path.resolve(artifactDir, "dist");
   await rm(distDir, { recursive: true, force: true });
 
+  // Step 1: Build the React frontend
+  console.log("Building frontend...");
+  execSync("pnpm --filter @workspace/market-dashboard run build", {
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      BASE_PATH: "/",
+      NODE_ENV: process.env.NODE_ENV || "production",
+    },
+  });
+
+  // Step 2: Copy frontend build output into the server's dist/public directory
+  const frontendDist = path.resolve(
+    artifactDir,
+    "..",
+    "market-dashboard",
+    "dist",
+    "public",
+  );
+  const publicDist = path.resolve(distDir, "public");
+  await cp(frontendDist, publicDist, { recursive: true });
+  console.log("Frontend copied to dist/public");
+
+  // Step 3: Bundle the Express server with esbuild
+  console.log("Building server...");
   await esbuild({
     entryPoints: [path.resolve(artifactDir, "src/index.ts")],
     platform: "node",
@@ -104,7 +130,7 @@ async function buildAll() {
     sourcemap: "linked",
     plugins: [
       // pino relies on workers to handle logging, instead of externalizing it we use a plugin to handle it
-      esbuildPluginPino({ transports: ["pino-pretty"] })
+      esbuildPluginPino({ transports: ["pino-pretty"] }),
     ],
     // Make sure packages that are cjs only (e.g. express) but are bundled continue to work in our esm output file
     banner: {
