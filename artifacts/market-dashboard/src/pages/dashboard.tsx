@@ -387,7 +387,9 @@ export default function Dashboard() {
                   {movers.gainers.slice(0, 5).map(g => (
                     <div key={g.symbol} className="flex justify-between items-center p-2 hover:bg-muted/50 rounded-sm">
                       <span className="font-bold text-sm">{g.symbol}</span>
-                      <span className="text-success font-mono text-sm">+{g.changePercent.toFixed(2)}%</span>
+                      <span className={cn("font-mono text-sm", g.changePercent >= 0 ? "text-success" : "text-destructive")}>
+                        {g.changePercent >= 0 ? "+" : ""}{g.changePercent.toFixed(2)}%
+                      </span>
                     </div>
                   ))}
                 </div>

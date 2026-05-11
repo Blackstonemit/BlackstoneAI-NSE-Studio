@@ -193,7 +193,7 @@ export default function AnalysisBoard() {
 
           <div className="flex items-center gap-1 text-xs font-mono border border-muted rounded-sm px-2 py-1">
             <Cpu className="h-3 w-3 text-success" />
-            <span className="text-muted-foreground">NVIDIA</span>
+            <span className="text-muted-foreground">OPENAI GPT-5.4</span>
           </div>
 
           <div className={cn(

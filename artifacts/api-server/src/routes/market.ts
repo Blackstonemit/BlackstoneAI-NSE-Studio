@@ -523,11 +523,18 @@ router.get("/market/movers", async (req, res) => {
     );
 
     const valid = quotes.filter(Boolean) as any[];
-    const sorted = [...valid].sort((a, b) => b.changePercent - a.changePercent);
+    const sortedDesc = [...valid].sort((a, b) => b.changePercent - a.changePercent);
+    const sortedAsc  = [...valid].sort((a, b) => a.changePercent - b.changePercent);
 
+    // Only include true gainers (positive %) and true losers (negative %)
+    const gainers = sortedDesc.filter((q) => q.changePercent > 0).slice(0, 5);
+    const losers  = sortedAsc.filter((q) => q.changePercent < 0).slice(0, 5);
+
+    // Fallback: if no true gainers/losers (entire market moved one way),
+    // show the least-negative / least-positive performers so the UI is never empty
     res.json({
-      gainers: sorted.slice(0, 5),
-      losers: sorted.slice(-5).reverse(),
+      gainers: gainers.length > 0 ? gainers : sortedDesc.slice(0, 5),
+      losers:  losers.length  > 0 ? losers  : sortedAsc.slice(0, 5),
       mostActive: [...valid]
         .sort((a, b) => b.volume - a.volume)
         .slice(0, 5),
