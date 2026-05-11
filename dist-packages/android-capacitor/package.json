@@ -1,0 +1,23 @@
+{
+  "name": "nse-bse-trading-terminal-android",
+  "version": "1.0.0",
+  "description": "NSE/BSE AI Trading Terminal — Android (Capacitor)",
+  "scripts": {
+    "sync": "cap sync android",
+    "open": "cap open android",
+    "run": "cap run android",
+    "build-apk": "cap sync android && cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.2.0",
+    "@capacitor/core": "^7.2.0",
+    "@capacitor/splash-screen": "^7.0.1",
+    "@capacitor/status-bar": "^7.0.1",
+    "@capacitor/app": "^7.0.1",
+    "@capacitor/haptics": "^7.0.1",
+    "@capacitor/keyboard": "^7.0.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.2.0"
+  }
+}

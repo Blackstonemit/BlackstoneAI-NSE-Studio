@@ -1,0 +1,57 @@
+NSE/BSE AI TRADING TERMINAL — WINDOWS DESKTOP APP
+==================================================
+
+STEP 1: Install Node.js
+------------------------
+Download and install Node.js 20 LTS from: https://nodejs.org
+(Required to run the server and build the app)
+
+STEP 2: Run setup
+------------------
+Double-click setup.bat  (or run in terminal: setup.bat)
+This installs all dependencies (~500 MB, takes 3-5 min on first run).
+
+STEP 3: Configure (optional)
+------------------------------
+Open the .env file in Notepad and add:
+
+  DATABASE_URL=postgresql://user:password@localhost:5432/mydb
+    → For signals and watchlist to persist between sessions.
+    → Without this, the app works but data resets on restart.
+
+  OPENAI_API_KEY=sk-...
+    → For AI trading signal generation.
+
+STEP 4: Launch
+---------------
+Double-click launch.bat  OR  run in terminal: npm run dev
+
+STEP 5: Build installer .exe (optional)
+-----------------------------------------
+Run in terminal: npm run dist
+Output: release\NSE BSE Trading Terminal Setup 1.0.0.exe
+
+==================================================
+REQUIREMENTS
+  - Windows 10 / 11 (64-bit)
+  - Node.js 20 LTS or higher
+  - Internet connection (for live market data)
+  - PostgreSQL (optional, for data persistence)
+
+KEYBOARD SHORTCUTS
+  Ctrl+1   Live Dashboard       Ctrl+5   Technical Analysis
+  Ctrl+2   Signals Board        Ctrl+6   Options Chain
+  Ctrl+3   Market Feed          Ctrl+7   Futures
+  Ctrl+4   Charts               F11      Fullscreen
+  F12      DevTools             Ctrl+R   Reload
+
+NOTES
+  - Market data is delayed 15-20 minutes (Yahoo Finance)
+  - Indian market hours: 9:15 AM to 3:30 PM IST
+  - AI signals are for informational purposes only
+  - Not financial advice
+
+SUPPORT
+  Signals are AI-generated based on technical analysis.
+  Always do your own research before trading.
+==================================================

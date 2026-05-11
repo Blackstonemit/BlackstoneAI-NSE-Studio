@@ -1,0 +1,83 @@
+{
+  "name": "nse-bse-trading-terminal",
+  "version": "1.0.0",
+  "description": "NSE/BSE AI Trading Signals Terminal — Desktop App",
+  "main": "electron/main.js",
+  "homepage": "./",
+  "scripts": {
+    "install-deps": "npm install",
+    "build-server": "node build-server.mjs",
+    "build-frontend": "npm run build-server",
+    "start": "electron .",
+    "dev": "npm run build-server && electron .",
+    "dist": "npm run build-server && electron-builder --win --x64",
+    "dist-portable": "npm run build-server && electron-builder --win portable --x64"
+  },
+  "build": {
+    "appId": "com.nse.trading.terminal",
+    "productName": "NSE BSE Trading Terminal",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "dist/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "electron/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "electron/icon.ico",
+      "uninstallerIcon": "electron/icon.ico",
+      "installerHeaderIcon": "electron/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "NSE BSE Terminal"
+    },
+    "extraResources": [
+      {
+        "from": "dist/server",
+        "to": "server",
+        "filter": ["**/*"]
+      }
+    ]
+  },
+  "keywords": ["nse", "bse", "trading", "stocks", "india"],
+  "author": "NSE BSE Trading Terminal",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.92.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "drizzle-orm": "^0.44.0",
+    "express": "^5.1.0",
+    "openai": "^6.27.0",
+    "pino": "^9.6.0",
+    "pino-http": "^10.4.0",
+    "pino-pretty": "^13.0.0",
+    "pg": "^8.16.0",
+    "technicalindicators": "^3.1.0",
+    "yahoo-finance2": "^3.14.0"
+  },
+  "devDependencies": {
+    "electron": "^35.0.0",
+    "electron-builder": "^26.0.0",
+    "esbuild": "^0.27.3",
+    "esbuild-plugin-pino": "^2.3.3",
+    "cross-env": "^10.1.0"
+  }
+}

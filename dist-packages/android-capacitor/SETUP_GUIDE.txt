@@ -1,0 +1,96 @@
+NSE/BSE AI TRADING TERMINAL — ANDROID APK
+==========================================
+
+REQUIREMENTS
+  - Android Studio (latest stable): https://developer.android.com/studio
+  - JDK 17 (bundled with Android Studio)
+  - Android phone running Android 13, 14, 15, 16, or 17
+  - USB cable (for direct install) OR email the APK to yourself
+
+STEP 1: Install Android Studio
+--------------------------------
+Download from: https://developer.android.com/studio
+Run the installer and follow the setup wizard (includes JDK + Android SDK).
+
+STEP 2: Install Node.js dependencies
+--------------------------------------
+Open a terminal in this folder and run:
+  npm install
+
+STEP 3: Sync Capacitor
+------------------------
+  npx cap sync android
+
+STEP 4: Open in Android Studio
+--------------------------------
+  npx cap open android
+
+Android Studio will open. Let Gradle sync finish (first time takes 5-10 min
+while it downloads the Android SDK build tools).
+
+STEP 5: Build the APK
+-----------------------
+In Android Studio menu:
+  Build → Build Bundle(s) / APK(s) → Build APK(s)
+
+Wait for the build to complete (~2-3 min).
+Click "locate" in the notification to find the APK.
+
+APK location:
+  android/app/build/outputs/apk/debug/app-debug.apk
+
+STEP 6: Install on your Android device
+----------------------------------------
+Option A — USB:
+  1. Enable Developer Options on phone:
+     Settings → About Phone → tap "Build Number" 7 times
+  2. Enable USB Debugging:
+     Settings → Developer Options → USB Debugging → ON
+  3. Connect phone via USB, then run:
+     adb install android/app/build/outputs/apk/debug/app-debug.apk
+
+Option B — File transfer:
+  Copy app-debug.apk to your phone, then open it.
+  (Allow "Install from unknown sources" when prompted)
+
+Option C — Email/WhatsApp:
+  Send app-debug.apk to yourself, download on phone, open to install.
+
+==========================================
+APP DETAILS
+  Name:       NSE BSE Terminal
+  Package:    com.nse.trading.terminal
+  Min SDK:    Android 13 (API 33)
+  Target SDK: Android 15 (API 35)
+  Size:       ~8 MB APK
+
+SERVER URL (configured in capacitor.config.ts):
+  https://d43f1a26-4e25-4acf-9ae5-d41a19129fbf-00-ukt5cf453iwa.sisko.replit.dev
+
+  The app connects to this server for all data.
+  If you move to a custom domain, update capacitor.config.ts → server.url
+  and rebuild.
+
+FEATURES
+  - Live NSE/BSE market data
+  - AI trading signals (GPT-5.4)
+  - Technical analysis (RSI, MACD, Bollinger Bands, +10 indicators)
+  - Options chain, Futures
+  - Candlestick charts
+  - Dark theme (OLED-friendly)
+  - Native Android back button support
+  - Splash screen with terminal branding
+
+NOTES
+  - Requires internet connection at all times
+  - Market data delayed 15-20 minutes (Yahoo Finance)
+  - Indian market hours: 9:15 AM to 3:30 PM IST
+  - AI signals are for informational purposes only
+
+SIGNING FOR PLAY STORE / DISTRIBUTION (optional)
+  To create a signed release APK:
+  1. keytool -genkey -v -keystore trading.jks -keyalg RSA -keysize 2048 -validity 10000 -alias trading
+  2. In Android Studio: Build → Generate Signed Bundle / APK
+  3. Select APK, point to your .jks file, fill in alias + passwords
+  4. Output: android/app/build/outputs/apk/release/app-release.apk
+==========================================

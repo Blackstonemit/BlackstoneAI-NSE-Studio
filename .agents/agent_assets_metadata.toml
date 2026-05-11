@@ -18,3 +18,15 @@ id = "xmS6AsoboNuK3yRiZmCjs"
 uri = "file://nse-bse-trading-terminal.zip"
 type = "unspecified"
 title = "NSE/BSE AI Trading Terminal — Full Project Download"
+
+[[outputs]]
+id = "67jI151qkRPASBKeu2otF"
+uri = "file://dist-packages/electron-win-trading-terminal.tar.gz"
+type = "unspecified"
+title = "Windows Electron App (NSE/BSE Terminal)"
+
+[[outputs]]
+id = "3G67SuU1noySRV1vtH3bg"
+uri = "file://dist-packages/android-capacitor-trading-terminal.tar.gz"
+type = "unspecified"
+title = "Android APK Project (Capacitor)"
