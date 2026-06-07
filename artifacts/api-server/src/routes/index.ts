@@ -7,7 +7,6 @@ import watchlistRouter from "./watchlist";
 import agentRouter from "./agent";
 import schedulerRouter from "./scheduler";
 import aiProvidersRouter from "./ai-providers";
-import anthropicRouter from "./anthropic";
 
 const router: IRouter = Router();
 
@@ -19,6 +18,5 @@ router.use(watchlistRouter);
 router.use(agentRouter);
 router.use(schedulerRouter);
 router.use(aiProvidersRouter);
-router.use(anthropicRouter);
 
 export default router;
