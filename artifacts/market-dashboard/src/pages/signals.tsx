@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatISTDateTime } from "@/lib/market-hours";
 import { useQueryClient } from "@tanstack/react-query";
 import { 
   useGetSignals, 
@@ -270,7 +271,7 @@ export default function SignalsBoard() {
                     <span className="text-xs font-mono font-bold">{signal.confidence}%</span>
                   </div>
                   <div className="text-xs font-mono text-muted-foreground">
-                    CREATED: {new Date(signal.createdAt).toLocaleString()}
+                    CREATED: {formatISTDateTime(new Date(signal.createdAt))}
                   </div>
                 </div>
               </CardContent>

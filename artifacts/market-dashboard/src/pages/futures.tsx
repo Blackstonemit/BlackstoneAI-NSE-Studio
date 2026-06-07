@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatISTDate } from "@/lib/market-hours";
 import { useQueryClient } from "@tanstack/react-query";
 import { 
   useGetFutures, 
@@ -86,7 +87,7 @@ export default function FuturesFeed() {
                 {futures.map((f) => (
                   <TableRow key={`${f.symbol}-${f.expiry}`} className="border-muted hover:bg-muted/10">
                     <TableCell className="font-bold">{f.symbol}</TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{new Date(f.expiry).toLocaleDateString()}</TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">{formatISTDate(new Date(f.expiry))}</TableCell>
                     <TableCell className="text-right font-mono">{f.ltp.toFixed(2)}</TableCell>
                     <TableCell className={cn(
                       "text-right font-mono",

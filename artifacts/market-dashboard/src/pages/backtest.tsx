@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatISTShortDate } from "@/lib/market-hours";
 import { useGetMarketHistory } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -164,7 +165,7 @@ export default function BacktestPage() {
       );
       const pnl = (currentVal - entryPremium) * multiplier;
       return {
-        date: new Date(c.timestamp).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
+        date: formatISTShortDate(new Date(c.timestamp)),
         pnl: Math.round(pnl),
         spot: Math.round(spot),
         optionValue: Math.round(currentVal * 100) / 100,

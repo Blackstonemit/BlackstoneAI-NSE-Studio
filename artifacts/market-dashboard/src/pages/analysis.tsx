@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatISTTime } from "@/lib/market-hours";
 import { useQueryClient } from "@tanstack/react-query";
 import { 
   useGetTechnicalAnalysis, 
@@ -357,7 +358,7 @@ export default function AnalysisBoard() {
             ) : null}
 
             <div className="text-[10px] font-mono text-muted-foreground/50 text-right">
-              Generated at {new Date(agentResult.generatedAt).toLocaleTimeString()} · Saved to signals: {agentSettings.agentSaveSignals ? "YES" : "NO"}
+              Generated at {formatISTTime(new Date(agentResult.generatedAt))} IST · Saved to signals: {agentSettings.agentSaveSignals ? "YES" : "NO"}
             </div>
           </CardContent>
         </Card>

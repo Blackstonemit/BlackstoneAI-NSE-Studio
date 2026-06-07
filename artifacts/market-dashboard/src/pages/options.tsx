@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { formatISTDate, formatISTTime } from "@/lib/market-hours";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetOptionsChain,
@@ -297,7 +298,7 @@ export default function OptionsChain() {
               <SelectContent>
                 {chainData.expiries.map((exp) => (
                   <SelectItem key={exp} value={exp}>
-                    {new Date(exp).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                    {formatISTDate(new Date(exp))}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -477,7 +478,7 @@ export default function OptionsChain() {
                   {isNSE ? "NSE LIVE" : chainData.dataSource === "Yahoo" ? "YAHOO FINANCE" : "SYNTHETIC"}
                 </span>
                 <span className="text-muted-foreground">
-                  As on {lastUpdated.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })} IST
+                  As on {formatISTTime(lastUpdated)} IST
                 </span>
               </div>
             </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { formatISTTimeHHMM } from "@/lib/market-hours";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListAnthropicConversations,
@@ -185,7 +186,7 @@ export default function ChatPage() {
   }, [localMessages]);
 
   const handleNewChat = useCallback(() => {
-    const title = `Chat ${new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`;
+    const title = `Chat ${formatISTTimeHHMM(new Date())}`;
     createConv.mutate(
       { data: { title } },
       {
