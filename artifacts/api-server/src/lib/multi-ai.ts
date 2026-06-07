@@ -21,11 +21,14 @@ const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai
 const REPLIT_OPENAI_BASE_URL = process.env["AI_INTEGRATIONS_OPENAI_BASE_URL"];
 const OPENAI_MODEL = REPLIT_OPENAI_BASE_URL ? "gpt-5.4" : "gpt-4o-mini";
 
+// ANTHROPIC_API_KEY set directly as a secret takes priority over the DB-stored key
+const ANTHROPIC_ENV_KEY = process.env["ANTHROPIC_API_KEY"];
+
 const PROVIDER_MODELS: Record<AIProvider, string> = {
   nvidia: process.env["NVIDIA_MODEL"] ?? "qwen/qwen3.5-122b-a10b",
   openai: OPENAI_MODEL,
   gemini: "gemini-1.5-flash",
-  claude: "claude-3-5-haiku-20241022",
+  claude: "claude-sonnet-4-6",
 };
 
 function makeOpenAIClient(provider: Exclude<AIProvider, "claude">, apiKey: string): OpenAI {
@@ -61,6 +64,10 @@ async function getProviderKey(provider: AIProvider): Promise<string | null> {
     } catch {
       return null;
     }
+  }
+  if (provider === "claude") {
+    // ANTHROPIC_API_KEY env var takes priority over DB-stored key
+    if (ANTHROPIC_ENV_KEY) return ANTHROPIC_ENV_KEY;
   }
   try {
     const [row] = await db
@@ -102,8 +109,10 @@ export async function callWithFallback(
   messages: AIMessage[],
   options: { maxTokens?: number } = {}
 ): Promise<AICompletionResult> {
-  // Try openai (Replit integration) first, then nvidia, then others
-  const order: AIProvider[] = ["openai", "nvidia", "claude", "gemini"];
+  // Try claude first (if env key set), then openai, then others
+  const order: AIProvider[] = ANTHROPIC_ENV_KEY
+    ? ["claude", "openai", "nvidia", "gemini"]
+    : ["openai", "nvidia", "claude", "gemini"];
   const maxTokens = options.maxTokens ?? 2048;
 
   for (const provider of order) {
@@ -157,17 +166,18 @@ export async function getProvidersStatus(): Promise<
 
   const nvidiaKey = process.env["NVIDIA_API_KEY"];
   const replitOpenaiKey = process.env["AI_INTEGRATIONS_OPENAI_API_KEY"];
-  const providers: AIProvider[] = ["openai", "nvidia", "claude", "gemini"];
+  const providers: AIProvider[] = ["claude", "openai", "nvidia", "gemini"];
 
-  return providers.map((p, idx) => {
+  return providers.map((p) => {
+    if (p === "claude") {
+      const row = dbMap.get(p);
+      const configured = !!(ANTHROPIC_ENV_KEY || row?.apiKey);
+      return { provider: p, configured, enabled: configured, isDefault: !!ANTHROPIC_ENV_KEY };
+    }
     if (p === "openai") {
       const row = dbMap.get(p);
-      return {
-        provider: p,
-        configured: !!(replitOpenaiKey || row?.apiKey),
-        enabled: true,
-        isDefault: idx === 0,
-      };
+      const configured = !!(replitOpenaiKey || row?.apiKey);
+      return { provider: p, configured, enabled: true, isDefault: !ANTHROPIC_ENV_KEY };
     }
     if (p === "nvidia") {
       return { provider: p, configured: !!nvidiaKey, enabled: true, isDefault: false };

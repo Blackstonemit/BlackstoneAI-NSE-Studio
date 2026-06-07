@@ -15,6 +15,7 @@ import BacktestPage from "@/pages/backtest";
 import SettingsDashboard from "@/pages/settings";
 import ChartsPage from "@/pages/charts";
 import BhavcopyPage from "@/pages/bhavcopy";
+import ChatPage from "@/pages/chat";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -40,6 +41,7 @@ function Router() {
         <Route path="/backtest" component={BacktestPage} />
         <Route path="/charts" component={ChartsPage} />
         <Route path="/bhavcopy" component={BhavcopyPage} />
+        <Route path="/chat" component={ChatPage} />
         <Route path="/settings" component={SettingsDashboard} />
         <Route component={NotFound} />
       </Switch>

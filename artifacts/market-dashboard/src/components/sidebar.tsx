@@ -10,11 +10,14 @@ import {
   FlaskConical,
   Settings2,
   CandlestickChart,
-  PackageOpen
+  PackageOpen,
+  BotMessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const navItems = [
+type NavItem = { href: string; label: string; icon: React.ElementType; highlight?: boolean };
+
+const navItems: NavItem[] = [
   { href: "/", label: "Live Dashboard", icon: Activity },
   { href: "/signals", label: "Signals Board", icon: TerminalSquare },
   { href: "/market", label: "Market Feed", icon: LineChart },
@@ -25,6 +28,7 @@ const navItems = [
   { href: "/backtest", label: "Backtest", icon: FlaskConical },
   { href: "/bhavcopy", label: "Bhavcopy", icon: PackageOpen },
   { href: "/watchlist", label: "Watchlist", icon: List },
+  { href: "/chat", label: "Claude AI Chat", icon: BotMessageSquare, highlight: true },
   { href: "/settings", label: "Settings", icon: Settings2 },
 ];
 
@@ -50,6 +54,8 @@ export function Sidebar() {
                     "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-sm transition-colors",
                     isActive
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : item.highlight
+                      ? "text-emerald-400/80 hover:bg-emerald-500/10 hover:text-emerald-300"
                       : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                   )}
                 >
