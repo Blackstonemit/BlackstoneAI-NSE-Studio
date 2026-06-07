@@ -147,12 +147,25 @@ const C = {
   rsiOS:        "rgba(34,197,94,0.15)",
 };
 
+// IST offset in seconds (+5:30)
+const IST_OFFSET_S = 19800;
+
 const CHART_OPTS = {
   layout: { background: { type: ColorType.Solid, color: C.bg }, textColor: C.text },
   grid: { vertLines: { color: C.grid }, horzLines: { color: C.grid } },
   crosshair: { mode: CrosshairMode.Normal },
   rightPriceScale: { borderColor: C.border },
   timeScale: { borderColor: C.border, timeVisible: true, secondsVisible: false },
+  localization: {
+    timeFormatter: (utcSec: number) => {
+      const ist = new Date((utcSec - IST_OFFSET_S) * 1000 + IST_OFFSET_S * 1000);
+      const h = ist.getUTCHours().toString().padStart(2, "0");
+      const m = ist.getUTCMinutes().toString().padStart(2, "0");
+      const d = ist.getUTCDate().toString().padStart(2, "0");
+      const mon = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][ist.getUTCMonth()];
+      return `${d} ${mon} ${h}:${m} IST`;
+    },
+  },
 };
 
 // ── Overlay toggles ───────────────────────────────────────────────────────────
@@ -224,7 +237,7 @@ export default function ChartsPage() {
       (c) => c.open > 0 && c.high > 0 && c.low > 0 && c.close > 0
     );
     if (!candles.length) return null;
-    const times = candles.map((c) => Math.floor(new Date(c.timestamp).getTime() / 1000) as UTCTimestamp);
+    const times = candles.map((c) => (Math.floor(new Date(c.timestamp).getTime() / 1000) + IST_OFFSET_S) as UTCTimestamp);
     const closes = candles.map((c) => c.close);
 
     const ohlc: CandlestickData[] = candles.map((c, i) => ({

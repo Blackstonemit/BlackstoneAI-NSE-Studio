@@ -11,6 +11,7 @@ import {
   Settings2,
   CandlestickChart,
   PackageOpen,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ const navItems = [
   { href: "/charts", label: "Charts", icon: CandlestickChart },
   { href: "/backtest", label: "Backtest", icon: FlaskConical },
   { href: "/bhavcopy", label: "Bhavcopy", icon: PackageOpen },
+  { href: "/scalping", label: "Scalp Desk (5M)", icon: Zap },
   { href: "/watchlist", label: "Watchlist", icon: List },
   { href: "/settings", label: "Settings", icon: Settings2 },
 ];
