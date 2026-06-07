@@ -5,6 +5,7 @@ import { signals } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { callWithFallback } from "../lib/multi-ai";
 import { computeTechnicals } from "./analysis";
+import { extractFirstJSON } from "../lib/json-extract";
 
 const router: IRouter = Router();
 
@@ -129,9 +130,7 @@ Generate a JSON signal with this exact structure:
         let signalData: any;
 
         try {
-          // Extract JSON from response
-          const jsonMatch = content.match(/\{[\s\S]*\}/);
-          signalData = JSON.parse(jsonMatch?.[0] ?? content);
+          signalData = extractFirstJSON(content);
         } catch {
           continue;
         }

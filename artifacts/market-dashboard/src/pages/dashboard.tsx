@@ -207,6 +207,7 @@ export default function Dashboard() {
   const [pinnedQuotes, setPinnedQuotes] = useState<Record<string, LiveQuote>>({});
   const [showSearch, setShowSearch] = useState(false);
   const [quotesLoading, setQuotesLoading] = useState(false);
+  const fetchAbortRef = useRef<AbortController | null>(null);
 
   const addPin = (sym: string) => {
     const next = [...pins.filter(p => p !== sym), sym];
@@ -219,17 +220,24 @@ export default function Dashboard() {
   };
 
   const fetchPinnedQuotes = useCallback(async (symbols: string[]) => {
-    if (symbols.length === 0) return;
+    if (symbols.length === 0) { setPinnedQuotes({}); return; }
+    fetchAbortRef.current?.abort();
+    const controller = new AbortController();
+    fetchAbortRef.current = controller;
     setQuotesLoading(true);
     try {
       const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const res = await fetch(`${base}/api/market/quotes?symbols=${symbols.join(",")}`);
+      const res = await fetch(`${base}/api/market/quotes?symbols=${symbols.join(",")}`, { signal: controller.signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: LiveQuote[] = await res.json();
       const map: Record<string, LiveQuote> = {};
       for (const q of data) map[q.symbol] = q;
       setPinnedQuotes(map);
-    } catch {}
-    finally { setQuotesLoading(false); }
+    } catch (err) {
+      if ((err as Error).name === "AbortError") return;
+    } finally {
+      if (!controller.signal.aborted) setQuotesLoading(false);
+    }
   }, []);
 
   // Fetch on pin list change

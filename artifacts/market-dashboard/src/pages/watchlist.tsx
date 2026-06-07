@@ -29,6 +29,7 @@ export default function WatchlistBoard() {
   const [type, setType] = useState<AddWatchlistBodyInstrumentType>("STOCK");
   const [liveQuotes, setLiveQuotes] = useState<Record<string, LiveQuote>>({});
   const [quotesLoading, setQuotesLoading] = useState(false);
+  const fetchAbortRef = useRef<AbortController | null>(null);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -37,16 +38,23 @@ export default function WatchlistBoard() {
 
   const fetchQuotes = useCallback(async (symbols: string[]) => {
     if (symbols.length === 0) { setLiveQuotes({}); return; }
+    fetchAbortRef.current?.abort();
+    const controller = new AbortController();
+    fetchAbortRef.current = controller;
     setQuotesLoading(true);
     try {
       const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const res = await fetch(`${base}/api/market/quotes?symbols=${symbols.join(",")}`);
+      const res = await fetch(`${base}/api/market/quotes?symbols=${symbols.join(",")}`, { signal: controller.signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: LiveQuote[] = await res.json();
       const map: Record<string, LiveQuote> = {};
       for (const q of data) map[q.symbol] = q;
       setLiveQuotes(map);
-    } catch { /* silent */ }
-    finally { setQuotesLoading(false); }
+    } catch (err) {
+      if ((err as Error).name === "AbortError") return;
+    } finally {
+      if (!controller.signal.aborted) setQuotesLoading(false);
+    }
   }, []);
 
   const watchlistSymbols = useRef<string[]>([]);

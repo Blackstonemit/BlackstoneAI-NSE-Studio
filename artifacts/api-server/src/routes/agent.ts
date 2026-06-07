@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { signals } from "@workspace/db";
 import { computeTechnicals } from "./analysis";
 import { callWithFallback } from "../lib/multi-ai";
+import { extractFirstJSON } from "../lib/json-extract";
 
 const router: IRouter = Router();
 
@@ -121,8 +122,7 @@ If ${instrumentType} is OPTIONS, suggest specific strike prices and expiries. On
 
     let analysisResult: any;
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      analysisResult = JSON.parse(jsonMatch?.[0] ?? content);
+      analysisResult = extractFirstJSON(content);
     } catch {
       res.status(500).json({ error: "AI returned invalid response" });
       return;
