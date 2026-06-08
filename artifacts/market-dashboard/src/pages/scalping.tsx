@@ -467,7 +467,7 @@ export default function ScalpingPage() {
 
       mc.subscribeCrosshairMove((p) => {
         if (!p.time) return;
-        rc.setCrosshairPosition(0, p.time as UTCTimestamp, ml);
+        try { rc.setCrosshairPosition(0, p.time as UTCTimestamp, ml); } catch { /* no data at this time */ }
       });
     }
 
