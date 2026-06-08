@@ -14,6 +14,7 @@ import {
   Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PaperTradeToggle } from "./paper-trade-panel";
 
 const navItems = [
   { href: "/", label: "Live Dashboard", icon: Activity },
@@ -63,9 +64,12 @@ export function Sidebar() {
           })}
         </nav>
       </div>
-      <div className="p-4 border-t border-sidebar-border text-xs text-muted-foreground font-mono">
-        <div>SYSTEM: ONLINE</div>
-        <div className="text-success">LATENCY: 12ms</div>
+      <div className="p-3 border-t border-sidebar-border space-y-3">
+        <PaperTradeToggle />
+        <div className="text-xs text-muted-foreground font-mono px-1">
+          <div>SYSTEM: ONLINE</div>
+          <div className="text-success">LATENCY: 12ms</div>
+        </div>
       </div>
     </div>
   );
