@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { formatISTDate, formatISTTime } from "@/lib/market-hours";
+import { TradeButtons } from "@/components/trade-buttons";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetOptionsChain,
@@ -564,6 +565,11 @@ export default function OptionsChain() {
                         <td className={cn("py-1.5 px-2 text-center font-bold border-x border-muted", isATM ? "bg-yellow-500/20 text-yellow-300 ring-1 ring-inset ring-yellow-500/40" : "bg-muted/20 text-foreground")}>
                           {isATM && <span className="text-[9px] block text-yellow-400 leading-none mb-0.5">ATM</span>}
                           {call.strikePrice}
+                          <div className="flex items-center justify-center gap-1 mt-0.5">
+                            <TradeButtons symbol={`${symbol}${call.strikePrice}CE`} price={call.ltp} />
+                            <span className="text-[9px] text-muted-foreground/30">|</span>
+                            <TradeButtons symbol={`${symbol}${put.strikePrice}PE`} price={put.ltp} />
+                          </div>
                         </td>
                         <td className={cn("py-1.5 px-2 text-left tabular-nums font-bold border-l border-muted", isPutITM ? "bg-red-600/25 text-red-200" : "bg-red-900/20 text-red-300")}>{put.ltp.toFixed(2)}</td>
                         <td className={cn("py-1.5 px-2 text-left tabular-nums", isPutITM ? "bg-red-500/8" : "")}><Chng v={put.change} /></td>

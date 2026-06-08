@@ -7,6 +7,7 @@ import {
 } from "@workspace/api-client-react";
 import { useLiveRefresh } from "@/hooks/use-live-refresh";
 import { LiveRefreshBar } from "@/components/live-refresh-bar";
+import { TradeButtons } from "@/components/trade-buttons";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -81,6 +82,7 @@ export default function FuturesFeed() {
                   <TableHead className="font-mono text-xs text-muted-foreground text-right">VOL</TableHead>
                   <TableHead className="font-mono text-xs text-muted-foreground text-right">OI</TableHead>
                   <TableHead className="font-mono text-xs text-muted-foreground text-right">BASIS</TableHead>
+                  <TableHead className="font-mono text-xs text-muted-foreground text-center">TRADE</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -117,6 +119,9 @@ export default function FuturesFeed() {
                       f.basis > 0 ? "text-success" : "text-destructive"
                     )}>
                       {f.basis > 0 ? "+" : ""}{f.basis.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <TradeButtons symbol={f.symbol} price={f.ltp} />
                     </TableCell>
                   </TableRow>
                 ))}

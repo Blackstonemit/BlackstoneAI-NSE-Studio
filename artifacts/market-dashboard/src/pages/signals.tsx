@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { formatISTDateTime } from "@/lib/market-hours";
+import { SignalTradeButton } from "@/components/trade-buttons";
 import { useQueryClient } from "@tanstack/react-query";
 import { 
   useGetSignals, 
@@ -270,8 +271,15 @@ export default function SignalsBoard() {
                     </div>
                     <span className="text-xs font-mono font-bold">{signal.confidence}%</span>
                   </div>
-                  <div className="text-xs font-mono text-muted-foreground">
-                    CREATED: {formatISTDateTime(new Date(signal.createdAt))}
+                  <div className="flex items-center gap-4">
+                    <SignalTradeButton
+                      symbol={signal.symbol}
+                      price={signal.entryPrice ?? null}
+                      direction={signal.action as "BUY" | "SELL" | "EXIT"}
+                    />
+                    <div className="text-xs font-mono text-muted-foreground">
+                      CREATED: {formatISTDateTime(new Date(signal.createdAt))}
+                    </div>
                   </div>
                 </div>
               </CardContent>

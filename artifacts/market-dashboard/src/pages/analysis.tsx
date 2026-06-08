@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Loader2, BrainCircuit, Cpu, TrendingUp, TrendingDown, ShieldAlert, X, Sliders, Activity, BarChart3, Zap, Waves } from "lucide-react";
+import { SignalTradeButton } from "@/components/trade-buttons";
 import { useToast } from "@/hooks/use-toast";
 import { loadSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
@@ -334,7 +335,7 @@ export default function AnalysisBoard() {
                         <div className="text-xs text-muted-foreground mt-0.5">{sig.rationale}</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 text-xs font-mono shrink-0">
+                    <div className="flex items-center gap-3 text-xs font-mono shrink-0 flex-wrap">
                       <div className="text-muted-foreground">ENTRY: <span className="text-foreground font-bold">{sig.entryPrice ?? "—"}</span></div>
                       <div className="text-muted-foreground">TARGET: <span className="text-success font-bold">{sig.targetPrice ?? "—"}</span></div>
                       <div className="text-muted-foreground">SL: <span className="text-destructive font-bold">{sig.stopLoss ?? "—"}</span></div>
@@ -346,6 +347,11 @@ export default function AnalysisBoard() {
                       )}>
                         {sig.confidence}%
                       </div>
+                      <SignalTradeButton
+                        symbol={symbol}
+                        price={sig.entryPrice ?? null}
+                        direction={sig.action as "BUY" | "SELL" | "EXIT"}
+                      />
                     </div>
                   </div>
                 ))}

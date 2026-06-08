@@ -8,6 +8,7 @@ import {
 } from "@workspace/api-client-react";
 import { useLiveRefresh } from "@/hooks/use-live-refresh";
 import { LiveRefreshBar } from "@/components/live-refresh-bar";
+import { TradeButtons } from "@/components/trade-buttons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -37,6 +38,7 @@ function QuoteTable({ data, isLoading }: { data: any[], isLoading: boolean }) {
           <TableHead className="font-mono text-xs text-muted-foreground text-right">LTP</TableHead>
           <TableHead className="font-mono text-xs text-muted-foreground text-right">CHG %</TableHead>
           <TableHead className="font-mono text-xs text-muted-foreground text-right">VOL</TableHead>
+          <TableHead className="font-mono text-xs text-muted-foreground text-center">TRADE</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -59,6 +61,9 @@ function QuoteTable({ data, isLoading }: { data: any[], isLoading: boolean }) {
                 : q.volume >= 1000
                   ? `${(q.volume / 1000).toFixed(1)}K`
                   : q.volume}
+            </TableCell>
+            <TableCell className="text-center">
+              <TradeButtons symbol={q.symbol} price={q.price} />
             </TableCell>
           </TableRow>
         ))}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { TradeButtons } from "@/components/trade-buttons";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetMarketIndices, getGetMarketIndicesQueryKey,
@@ -395,9 +396,12 @@ export default function Dashboard() {
                   {movers.gainers.slice(0, 5).map(g => (
                     <div key={g.symbol} className="flex justify-between items-center p-2 hover:bg-muted/50 rounded-sm">
                       <span className="font-bold text-sm">{g.symbol}</span>
-                      <span className={cn("font-mono text-sm", g.changePercent >= 0 ? "text-success" : "text-destructive")}>
-                        {g.changePercent >= 0 ? "+" : ""}{g.changePercent.toFixed(2)}%
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={cn("font-mono text-sm", g.changePercent >= 0 ? "text-success" : "text-destructive")}>
+                          {g.changePercent >= 0 ? "+" : ""}{g.changePercent.toFixed(2)}%
+                        </span>
+                        <TradeButtons symbol={g.symbol} price={g.price} />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -405,7 +409,10 @@ export default function Dashboard() {
                   {movers.losers.slice(0, 5).map(l => (
                     <div key={l.symbol} className="flex justify-between items-center p-2 hover:bg-muted/50 rounded-sm">
                       <span className="font-bold text-sm">{l.symbol}</span>
-                      <span className="text-destructive font-mono text-sm">{l.changePercent.toFixed(2)}%</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-destructive font-mono text-sm">{l.changePercent.toFixed(2)}%</span>
+                        <TradeButtons symbol={l.symbol} price={l.price} />
+                      </div>
                     </div>
                   ))}
                 </div>
