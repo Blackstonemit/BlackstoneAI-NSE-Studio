@@ -18,6 +18,8 @@ tags:
     description: Technical analysis engine
   - name: watchlist
     description: User watchlist management
+  - name: alerts
+    description: Price alert management
   - name: openai
     description: OpenAI AI agent operations
   - name: anthropic
@@ -330,6 +332,53 @@ paths:
       responses:
         "204":
           description: Removed
+
+  /alerts:
+    get:
+      operationId: getAlerts
+      tags: [alerts]
+      summary: Get all price alerts
+      responses:
+        "200":
+          description: Price alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PriceAlert"
+    post:
+      operationId: createAlert
+      tags: [alerts]
+      summary: Create a new price alert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlertInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PriceAlert"
+
+  /alerts/{id}:
+    delete:
+      operationId: deleteAlert
+      tags: [alerts]
+      summary: Delete a price alert
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
 
   /openai/agent/analyze:
     post:
@@ -934,6 +983,45 @@ components:
           enum: [STOCK, INDEX, OPTIONS, FUTURES]
           default: STOCK
       required: [symbol, name]
+
+    PriceAlert:
+      type: object
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        name:
+          type: string
+        condition:
+          type: string
+          enum: [ABOVE, BELOW]
+        targetPrice:
+          type: number
+        status:
+          type: string
+          enum: [ACTIVE, TRIGGERED, CANCELLED]
+        triggeredAt:
+          type: ["string", "null"]
+        triggeredPrice:
+          type: ["number", "null"]
+        createdAt:
+          type: string
+      required: [id, symbol, name, condition, targetPrice, status, triggeredAt, triggeredPrice, createdAt]
+
+    AlertInput:
+      type: object
+      properties:
+        symbol:
+          type: string
+        name:
+          type: string
+        condition:
+          type: string
+          enum: [ABOVE, BELOW]
+        targetPrice:
+          type: number
+      required: [symbol, name, condition, targetPrice]
 
     RunAgentAnalysisInput:
       type: object

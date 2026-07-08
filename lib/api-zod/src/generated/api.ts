@@ -464,6 +464,39 @@ export const RemoveFromWatchlistParams = zod.object({
 });
 
 /**
+ * @summary Get all price alerts
+ */
+export const GetAlertsResponseItem = zod.object({
+  id: zod.number(),
+  symbol: zod.string(),
+  name: zod.string(),
+  condition: zod.enum(["ABOVE", "BELOW"]),
+  targetPrice: zod.number(),
+  status: zod.enum(["ACTIVE", "TRIGGERED", "CANCELLED"]),
+  triggeredAt: zod.string().nullable(),
+  triggeredPrice: zod.number().nullable(),
+  createdAt: zod.string(),
+});
+export const GetAlertsResponse = zod.array(GetAlertsResponseItem);
+
+/**
+ * @summary Create a new price alert
+ */
+export const CreateAlertBody = zod.object({
+  symbol: zod.string(),
+  name: zod.string(),
+  condition: zod.enum(["ABOVE", "BELOW"]),
+  targetPrice: zod.number(),
+});
+
+/**
+ * @summary Delete a price alert
+ */
+export const DeleteAlertParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
  * @summary Run the AI agent to analyze a symbol and produce a detailed report with signals
  */
 export const runAgentAnalysisBodyInstrumentTypeDefault = `STOCK`;

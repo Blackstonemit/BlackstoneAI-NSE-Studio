@@ -340,6 +340,52 @@ export interface AddWatchlistBody {
   instrumentType?: AddWatchlistBodyInstrumentType;
 }
 
+export type PriceAlertCondition =
+  (typeof PriceAlertCondition)[keyof typeof PriceAlertCondition];
+
+export const PriceAlertCondition = {
+  ABOVE: "ABOVE",
+  BELOW: "BELOW",
+} as const;
+
+export type PriceAlertStatus =
+  (typeof PriceAlertStatus)[keyof typeof PriceAlertStatus];
+
+export const PriceAlertStatus = {
+  ACTIVE: "ACTIVE",
+  TRIGGERED: "TRIGGERED",
+  CANCELLED: "CANCELLED",
+} as const;
+
+export interface PriceAlert {
+  id: number;
+  symbol: string;
+  name: string;
+  condition: PriceAlertCondition;
+  targetPrice: number;
+  status: PriceAlertStatus;
+  /** @nullable */
+  triggeredAt: string | null;
+  /** @nullable */
+  triggeredPrice: number | null;
+  createdAt: string;
+}
+
+export type AlertInputCondition =
+  (typeof AlertInputCondition)[keyof typeof AlertInputCondition];
+
+export const AlertInputCondition = {
+  ABOVE: "ABOVE",
+  BELOW: "BELOW",
+} as const;
+
+export interface AlertInput {
+  symbol: string;
+  name: string;
+  condition: AlertInputCondition;
+  targetPrice: number;
+}
+
 export type RunAgentAnalysisInputInstrumentType =
   (typeof RunAgentAnalysisInputInstrumentType)[keyof typeof RunAgentAnalysisInputInstrumentType];
 
