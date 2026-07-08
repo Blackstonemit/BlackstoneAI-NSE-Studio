@@ -1,0 +1,1 @@
+- [Orval request-body schema naming](orval-body-schema-naming.md) — generated Zod body/param schema names come from operationId, not the OpenAPI component schema name.
