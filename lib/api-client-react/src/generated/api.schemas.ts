@@ -457,6 +457,87 @@ export interface AnthropicError {
   error: string;
 }
 
+export interface ScreenerStock {
+  symbol: string;
+  name: string;
+  currentPrice: number;
+  marketCap: number;
+  /** @nullable */
+  pe?: number | null;
+  /** @nullable */
+  eps?: number | null;
+  /** @nullable */
+  roe?: number | null;
+  /** @nullable */
+  salesGrowth5yr?: number | null;
+  /** @nullable */
+  profitGrowth5yr?: number | null;
+  /** @nullable */
+  weekHigh52?: number | null;
+  /** @nullable */
+  weekLow52?: number | null;
+  change: number;
+  changePercent: number;
+  multibaggerScore: number;
+  /** @nullable */
+  rsi?: number | null;
+  screenerUrl: string;
+  dataSource: string;
+}
+
+export interface ScreenerResult {
+  stocks: ScreenerStock[];
+  preset: string;
+  criteria: string;
+  fetchedAt: string;
+  totalFound: number;
+}
+
+export interface ScreenerAnalyzeBody {
+  symbols: string[];
+  preset?: string;
+}
+
+export type ScreenerStockAnalysisVerdict =
+  (typeof ScreenerStockAnalysisVerdict)[keyof typeof ScreenerStockAnalysisVerdict];
+
+export const ScreenerStockAnalysisVerdict = {
+  STRONG_BUY: "STRONG_BUY",
+  BUY: "BUY",
+  HOLD: "HOLD",
+  AVOID: "AVOID",
+} as const;
+
+export type ScreenerStockAnalysisMultibaggerPotential =
+  (typeof ScreenerStockAnalysisMultibaggerPotential)[keyof typeof ScreenerStockAnalysisMultibaggerPotential];
+
+export const ScreenerStockAnalysisMultibaggerPotential = {
+  HIGH: "HIGH",
+  MEDIUM: "MEDIUM",
+  LOW: "LOW",
+} as const;
+
+export interface ScreenerStockAnalysis {
+  symbol: string;
+  name: string;
+  verdict: ScreenerStockAnalysisVerdict;
+  multibaggerPotential: ScreenerStockAnalysisMultibaggerPotential;
+  /** @nullable */
+  targetPrice1yr?: number | null;
+  /** @nullable */
+  stopLoss?: number | null;
+  rationale: string;
+  risks: string[];
+  catalysts: string[];
+  confidence: number;
+}
+
+export interface ScreenerAnalysis {
+  analyses: ScreenerStockAnalysis[];
+  summary: string;
+  generatedAt: string;
+}
+
 export type GetMarketQuotesParams = {
   /**
    * Comma-separated NSE symbols e.g. RELIANCE,NIFTY50,BANKNIFTY
@@ -518,6 +599,20 @@ export const GetMarketHistoryPeriod = {
   "3mo": "3mo",
   "6mo": "6mo",
   "1y": "1y",
+} as const;
+
+export type GetScreenerStocksParams = {
+  preset?: GetScreenerStocksPreset;
+};
+
+export type GetScreenerStocksPreset =
+  (typeof GetScreenerStocksPreset)[keyof typeof GetScreenerStocksPreset];
+
+export const GetScreenerStocksPreset = {
+  multibagger: "multibagger",
+  penny: "penny",
+  turnaround: "turnaround",
+  growth: "growth",
 } as const;
 
 export type GetTechnicalAnalysisParams = {

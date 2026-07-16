@@ -165,6 +165,72 @@ export const GetMarketHistoryResponse = zod.object({
 });
 
 /**
+ * @summary Get multibagger penny stocks from screener.in
+ */
+export const getScreenerStocksQueryPresetDefault = `multibagger`;
+
+export const GetScreenerStocksQueryParams = zod.object({
+  preset: zod
+    .enum(["multibagger", "penny", "turnaround", "growth"])
+    .default(getScreenerStocksQueryPresetDefault),
+});
+
+export const GetScreenerStocksResponse = zod.object({
+  stocks: zod.array(
+    zod.object({
+      symbol: zod.string(),
+      name: zod.string(),
+      currentPrice: zod.number(),
+      marketCap: zod.number(),
+      pe: zod.number().nullish(),
+      eps: zod.number().nullish(),
+      roe: zod.number().nullish(),
+      salesGrowth5yr: zod.number().nullish(),
+      profitGrowth5yr: zod.number().nullish(),
+      weekHigh52: zod.number().nullish(),
+      weekLow52: zod.number().nullish(),
+      change: zod.number(),
+      changePercent: zod.number(),
+      multibaggerScore: zod.number(),
+      rsi: zod.number().nullish(),
+      screenerUrl: zod.string(),
+      dataSource: zod.string(),
+    }),
+  ),
+  preset: zod.string(),
+  criteria: zod.string(),
+  fetchedAt: zod.string(),
+  totalFound: zod.number(),
+});
+
+/**
+ * @summary AI-powered deep analysis of screened multibagger candidates
+ */
+export const AnalyzeScreenerStocksBody = zod.object({
+  symbols: zod.array(zod.string()),
+  preset: zod.string().optional(),
+});
+
+export const AnalyzeScreenerStocksResponse = zod.object({
+  analyses: zod.array(
+    zod.object({
+      symbol: zod.string(),
+      name: zod.string(),
+      verdict: zod.enum(["STRONG_BUY", "BUY", "HOLD", "AVOID"]),
+      multibaggerPotential: zod.enum(["HIGH", "MEDIUM", "LOW"]),
+      targetPrice1yr: zod.number().nullish(),
+      stopLoss: zod.number().nullish(),
+      rationale: zod.string(),
+      risks: zod.array(zod.string()),
+      catalysts: zod.array(zod.string()),
+      confidence: zod.number(),
+    }),
+  ),
+  summary: zod.string(),
+  generatedAt: zod.string(),
+});
+
+/**
  * @summary Get top gainers, losers, and most active stocks
  */
 export const GetMarketMoversResponse = zod.object({

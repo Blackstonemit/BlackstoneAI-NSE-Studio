@@ -66,6 +66,11 @@ router.post("/openai/agent/analyze", async (req, res) => {
 - EMA 9/21: ${techData.ema9 ?? "N/A"} / ${techData.ema21 ?? "N/A"}
 - ATR (14): ${techData.atr ?? "N/A"}
 - Stochastic K/D: ${techData.stochastic ? `${techData.stochastic.k} / ${techData.stochastic.d}` : "N/A"}
+- ADX (14): ${techData.adx != null ? `${techData.adx} (${techData.adx >= 25 ? "TRENDING" : "RANGING"})` : "N/A"}
+- OBV: ${techData.obv != null ? techData.obv.toLocaleString() : "N/A"}
+- VWAP: ${techData.vwap ?? "N/A"}
+- SuperTrend (7,3): ${techData.superTrend ? `${techData.superTrend.direction} @ ${techData.superTrend.value}` : "N/A"}
+- Fibonacci (50-bar): ${techData.fibonacci ? `High: ${techData.fibonacci.high} | 78.6%: ${techData.fibonacci.r786} | 61.8%: ${techData.fibonacci.r618} | 50%: ${techData.fibonacci.r500} | 38.2%: ${techData.fibonacci.r382} | Low: ${techData.fibonacci.low}` : "N/A"}
 - Computed Trend: ${techData.trend}
 - Overall Signal: ${techData.overallSignal} (Strength: ${techData.signalStrength}%)`
       : `No technical data available for ${symbol}.`;

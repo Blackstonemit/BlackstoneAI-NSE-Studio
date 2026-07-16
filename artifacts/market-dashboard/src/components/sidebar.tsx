@@ -12,6 +12,8 @@ import {
   CandlestickChart,
   PackageOpen,
   Zap,
+  Rocket,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PaperTradeToggle } from "./paper-trade-panel";
@@ -27,6 +29,8 @@ const navItems = [
   { href: "/backtest", label: "Backtest", icon: FlaskConical },
   { href: "/bhavcopy", label: "Bhavcopy", icon: PackageOpen },
   { href: "/scalping", label: "Scalp Desk (5M)", icon: Zap },
+  { href: "/multibagger", label: "Multibagger Screen", icon: Rocket },
+  { href: "/alerts", label: "Price Alerts", icon: Bell },
   { href: "/watchlist", label: "Watchlist", icon: List },
   { href: "/settings", label: "Settings", icon: Settings2 },
 ];

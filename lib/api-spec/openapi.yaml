@@ -159,6 +159,45 @@ paths:
               schema:
                 $ref: "#/components/schemas/PriceHistory"
 
+  /market/screener:
+    get:
+      operationId: getScreenerStocks
+      tags: [market]
+      summary: Get multibagger penny stocks from screener.in
+      parameters:
+        - name: preset
+          in: query
+          schema:
+            type: string
+            enum: [multibagger, penny, turnaround, growth]
+            default: multibagger
+      responses:
+        "200":
+          description: Screener results with multibagger scores
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScreenerResult"
+
+  /market/screener/analyze:
+    post:
+      operationId: analyzeScreenerStocks
+      tags: [market]
+      summary: AI-powered deep analysis of screened multibagger candidates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScreenerAnalyzeBody"
+      responses:
+        "200":
+          description: AI multibagger analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScreenerAnalysis"
+
   /market/movers:
     get:
       operationId: getMarketMovers
@@ -1131,3 +1170,114 @@ components:
         error:
           type: string
       required: [error]
+
+    ScreenerStock:
+      type: object
+      properties:
+        symbol:
+          type: string
+        name:
+          type: string
+        currentPrice:
+          type: number
+        marketCap:
+          type: number
+        pe:
+          type: ["number", "null"]
+        eps:
+          type: ["number", "null"]
+        roe:
+          type: ["number", "null"]
+        salesGrowth5yr:
+          type: ["number", "null"]
+        profitGrowth5yr:
+          type: ["number", "null"]
+        weekHigh52:
+          type: ["number", "null"]
+        weekLow52:
+          type: ["number", "null"]
+        change:
+          type: number
+        changePercent:
+          type: number
+        multibaggerScore:
+          type: number
+        rsi:
+          type: ["number", "null"]
+        screenerUrl:
+          type: string
+        dataSource:
+          type: string
+      required: [symbol, name, currentPrice, marketCap, change, changePercent, multibaggerScore, screenerUrl, dataSource]
+
+    ScreenerResult:
+      type: object
+      properties:
+        stocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScreenerStock"
+        preset:
+          type: string
+        criteria:
+          type: string
+        fetchedAt:
+          type: string
+        totalFound:
+          type: integer
+      required: [stocks, preset, criteria, fetchedAt, totalFound]
+
+    ScreenerAnalyzeBody:
+      type: object
+      properties:
+        symbols:
+          type: array
+          items:
+            type: string
+        preset:
+          type: string
+      required: [symbols]
+
+    ScreenerStockAnalysis:
+      type: object
+      properties:
+        symbol:
+          type: string
+        name:
+          type: string
+        verdict:
+          type: string
+          enum: [STRONG_BUY, BUY, HOLD, AVOID]
+        multibaggerPotential:
+          type: string
+          enum: [HIGH, MEDIUM, LOW]
+        targetPrice1yr:
+          type: ["number", "null"]
+        stopLoss:
+          type: ["number", "null"]
+        rationale:
+          type: string
+        risks:
+          type: array
+          items:
+            type: string
+        catalysts:
+          type: array
+          items:
+            type: string
+        confidence:
+          type: integer
+      required: [symbol, name, verdict, multibaggerPotential, rationale, risks, catalysts, confidence]
+
+    ScreenerAnalysis:
+      type: object
+      properties:
+        analyses:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScreenerStockAnalysis"
+        summary:
+          type: string
+        generatedAt:
+          type: string
+      required: [analyses, summary, generatedAt]
