@@ -11,7 +11,6 @@ interface SearchResult {
   type: string;
 }
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -41,7 +40,7 @@ export function StockSearch() {
     }
     setIsLoading(true);
     try {
-      const r = await fetch(`${BASE}/api/market/search?q=${encodeURIComponent(q)}`);
+      const r = await fetch(`/api/market/search?q=${encodeURIComponent(q)}`);
       const data = await r.json();
       setResults(data.results ?? []);
       setIsOpen(true);

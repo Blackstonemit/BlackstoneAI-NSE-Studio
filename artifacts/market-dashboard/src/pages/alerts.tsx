@@ -19,16 +19,14 @@ interface PriceAlert {
   createdAt: string;
 }
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-
 async function fetchAlerts(): Promise<PriceAlert[]> {
-  const r = await fetch(`${BASE}/api/alerts`);
+  const r = await fetch("/api/alerts");
   if (!r.ok) throw new Error("Failed to fetch alerts");
   return r.json();
 }
 
 async function createAlert(body: { symbol: string; name: string; condition: "ABOVE" | "BELOW"; targetPrice: number }) {
-  const r = await fetch(`${BASE}/api/alerts`, {
+  const r = await fetch("/api/alerts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -38,7 +36,7 @@ async function createAlert(body: { symbol: string; name: string; condition: "ABO
 }
 
 async function deleteAlert(id: number) {
-  const r = await fetch(`${BASE}/api/alerts/${id}`, { method: "DELETE" });
+  const r = await fetch(`/api/alerts/${id}`, { method: "DELETE" });
   if (!r.ok) throw new Error("Failed to delete alert");
 }
 

@@ -551,7 +551,7 @@ router.get("/market/search", async (req, res) => {
     const q = String(req.query.q ?? "").trim();
     if (!q) return res.json({ results: [] });
 
-    const raw = await yahooFinance.search(q, { newsCount: 0 });
+    const raw = await yahooFinance.search(q, { newsCount: 0 }, { validateResult: false });
     const results = (raw.quotes ?? [])
       .filter((r: any) => r.exchange && (r.exchange.includes("NSE") || r.exchange.includes("BSE") || r.typeDisp === "Index"))
       .slice(0, 8)
