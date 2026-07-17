@@ -56,8 +56,11 @@ export default function AnalysisBoard() {
   const agentSettings = loadSettings();
   const queryClient = useQueryClient();
 
-  const [symbol, setSymbol] = useState(agentSettings.defaultSymbol);
-  const [searchInput, setSearchInput] = useState(agentSettings.defaultSymbol);
+  const urlSymbol = new URLSearchParams(window.location.search).get("symbol")?.toUpperCase() ?? null;
+  const defaultSym = urlSymbol ?? agentSettings.defaultSymbol;
+
+  const [symbol, setSymbol] = useState(defaultSym);
+  const [searchInput, setSearchInput] = useState(defaultSym);
   const [interval, setAnalysisInterval] = useState<GetTechnicalAnalysisInterval>("1d");
   const [instrumentType, setInstrumentType] = useState<string>(agentSettings.agentInstrumentType);
   const [agentResult, setAgentResult] = useState<AgentResult | null>(null);
