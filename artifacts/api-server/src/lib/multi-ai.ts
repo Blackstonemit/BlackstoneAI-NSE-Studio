@@ -27,7 +27,7 @@ const ANTHROPIC_ENV_KEY = process.env['ANTHROPIC_API_KEY'];
 const PROVIDER_MODELS: Record<AIProvider, string> = {
   nvidia: process.env['NVIDIA_MODEL'] ?? 'qwen/qwen3.5-122b-a10b',
   openai: OPENAI_MODEL,
-  gemini: 'gemini-1.5-flash',
+  gemini: 'gemini-2.5-flash',
   claude: 'claude-sonnet-4-6',
 };
 

@@ -55,21 +55,21 @@ const PROVIDER_META: Record<
     color: 'text-blue-400',
     keyUrl: 'https://platform.openai.com/api-keys',
     keyHint: 'sk-...',
-    model: 'GPT-4o Mini',
+    model: 'GPT-5.4',
   },
   claude: {
     label: 'Anthropic Claude',
     color: 'text-orange-400',
     keyUrl: 'https://console.anthropic.com/settings/keys',
     keyHint: 'sk-ant-...',
-    model: 'Claude 3.5 Haiku',
+    model: 'Claude Sonnet 4.6',
   },
   gemini: {
     label: 'Google Gemini',
     color: 'text-yellow-400',
     keyUrl: 'https://aistudio.google.com/apikey',
     keyHint: 'AIza...',
-    model: 'Gemini 1.5 Flash',
+    model: 'Gemini 2.5 Flash',
   },
 };
 
