@@ -1,9 +1,9 @@
-import { db } from "@workspace/db";
-import { signals } from "@workspace/db";
-import { lt, eq, and } from "drizzle-orm";
-import { logger } from "./logger";
-import { callWithFallback } from "./multi-ai";
-import { computeTechnicals } from "../routes/analysis";
+import { db } from '@workspace/db';
+import { signals } from '@workspace/db';
+import { lt, eq, and } from 'drizzle-orm';
+import { logger } from './logger';
+import { callWithFallback } from './multi-ai';
+import { computeTechnicals } from '../routes/analysis';
 
 function isMarketHoursIST(): boolean {
   const now = new Date();
@@ -18,9 +18,9 @@ function nextTradingDayEnd(): Date {
   const now = new Date();
   const istOffsetMs = 5.5 * 60 * 60 * 1000;
   const nowIST = new Date(now.getTime() + istOffsetMs);
-  let expiry = new Date(Date.UTC(
-    nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate(), 10, 0, 0, 0
-  ));
+  let expiry = new Date(
+    Date.UTC(nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate(), 10, 0, 0, 0),
+  );
   if (expiry <= now) {
     expiry = new Date(expiry.getTime() + 24 * 60 * 60 * 1000);
     const d = expiry.getUTCDay();
@@ -67,18 +67,18 @@ export async function expireStaleSignals(): Promise<number> {
   try {
     const expired = await db
       .update(signals)
-      .set({ status: "EXPIRED" })
-      .where(and(lt(signals.expiresAt, new Date()), eq(signals.status, "ACTIVE")))
+      .set({ status: 'EXPIRED' })
+      .where(and(lt(signals.expiresAt, new Date()), eq(signals.status, 'ACTIVE')))
       .returning({ id: signals.id });
 
     if (expired.length > 0) {
       status.signalsExpired += expired.length;
-      logger.info({ count: expired.length }, "Auto-expired stale signals");
+      logger.info({ count: expired.length }, 'Auto-expired stale signals');
     }
     status.lastExpiry = new Date().toISOString();
     return expired.length;
   } catch (err) {
-    logger.error({ err }, "Signal expiry job failed");
+    logger.error({ err }, 'Signal expiry job failed');
     pushError(`expiry: ${String(err)}`);
     return 0;
   }
@@ -87,11 +87,11 @@ export async function expireStaleSignals(): Promise<number> {
 export async function autoGenerateSignals(symbols: string[]): Promise<number> {
   status.marketOpen = isMarketHoursIST();
   if (!status.marketOpen) {
-    logger.info("Auto-generate skipped: outside market hours");
+    logger.info('Auto-generate skipped: outside market hours');
     return 0;
   }
 
-  logger.info({ symbols }, "Scheduler: auto-generating AI signals");
+  logger.info({ symbols }, 'Scheduler: auto-generating AI signals');
   let count = 0;
 
   for (const symbol of symbols.slice(0, 5)) {
@@ -105,7 +105,7 @@ export async function autoGenerateSignals(symbols: string[]): Promise<number> {
 
       const systemPrompt = `You are an expert Indian stock market technical analyst. Based on the provided technical indicators, generate a precise trading signal for NSE/BSE instruments. Always respond with valid JSON only. No markdown, no explanation outside JSON.`;
       const userPrompt = `Analyze ${symbol} and generate ONE trading signal based on this data:
-RSI: ${techData?.rsi ?? "N/A"}, Trend: ${techData?.trend}, Overall Signal: ${techData?.overallSignal}, Strength: ${techData?.signalStrength}%
+RSI: ${techData?.rsi ?? 'N/A'}, Trend: ${techData?.trend}, Overall Signal: ${techData?.overallSignal}, Strength: ${techData?.signalStrength}%
 SMA20: ${techData?.sma20}, SMA50: ${techData?.sma50}, MACD: ${JSON.stringify(techData?.macd)}
 Timeframe: INTRADAY
 
@@ -114,10 +114,10 @@ Respond with exactly this JSON:
 
       const { content } = await callWithFallback(
         [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
         ],
-        { maxTokens: 512 }
+        { maxTokens: 512 },
       );
 
       let sig: Record<string, unknown>;
@@ -130,34 +130,34 @@ Respond with exactly this JSON:
 
       await db.insert(signals).values({
         symbol,
-        instrumentType: String(sig.instrumentType || "STOCK"),
-        action: String(sig.action || "HOLD"),
+        instrumentType: String(sig.instrumentType || 'STOCK'),
+        action: String(sig.action || 'HOLD'),
         displayText: String(sig.displayText || `${sig.action} ${symbol}`),
         entryPrice: (sig.entryPrice as number | null) ?? null,
         targetPrice: (sig.targetPrice as number | null) ?? null,
         stopLoss: (sig.stopLoss as number | null) ?? null,
         confidence: Math.min(100, Math.max(0, Number(sig.confidence ?? 50))),
-        rationale: String(sig.rationale || "Scheduled auto-generated signal"),
-        status: "ACTIVE",
-        timeframe: "INTRADAY",
+        rationale: String(sig.rationale || 'Scheduled auto-generated signal'),
+        status: 'ACTIVE',
+        timeframe: 'INTRADAY',
         expiresAt: nextTradingDayEnd(),
       });
 
       count++;
       status.signalsGenerated++;
     } catch (err) {
-      logger.warn({ err, symbol }, "Scheduler: signal generation failed for symbol");
+      logger.warn({ err, symbol }, 'Scheduler: signal generation failed for symbol');
       pushError(`generate ${symbol}: ${String(err)}`);
     }
   }
 
   status.lastGenerate = new Date().toISOString();
   status.nextGenerate = new Date(Date.now() + GENERATE_INTERVAL_MS).toISOString();
-  logger.info({ count }, "Scheduler: auto-generate cycle done");
+  logger.info({ count }, 'Scheduler: auto-generate cycle done');
   return count;
 }
 
-const DEFAULT_SYMBOLS = ["NIFTY", "BANKNIFTY", "RELIANCE", "TCS", "HDFCBANK"];
+const DEFAULT_SYMBOLS = ['NIFTY', 'BANKNIFTY', 'RELIANCE', 'TCS', 'HDFCBANK'];
 let schedulerSymbols: string[] = DEFAULT_SYMBOLS;
 
 export function startScheduler(symbols: string[] = DEFAULT_SYMBOLS) {
@@ -170,16 +170,25 @@ export function startScheduler(symbols: string[] = DEFAULT_SYMBOLS) {
   expiryTimer = setInterval(() => void expireStaleSignals(), EXPIRY_INTERVAL_MS);
 
   status.nextGenerate = new Date(Date.now() + GENERATE_INTERVAL_MS).toISOString();
-  generateTimer = setInterval(() => void autoGenerateSignals(schedulerSymbols), GENERATE_INTERVAL_MS);
+  generateTimer = setInterval(
+    () => void autoGenerateSignals(schedulerSymbols),
+    GENERATE_INTERVAL_MS,
+  );
 
-  logger.info({ symbols: schedulerSymbols }, "Scheduler started");
+  logger.info({ symbols: schedulerSymbols }, 'Scheduler started');
 }
 
 export function stopScheduler() {
-  if (expiryTimer) { clearInterval(expiryTimer); expiryTimer = null; }
-  if (generateTimer) { clearInterval(generateTimer); generateTimer = null; }
+  if (expiryTimer) {
+    clearInterval(expiryTimer);
+    expiryTimer = null;
+  }
+  if (generateTimer) {
+    clearInterval(generateTimer);
+    generateTimer = null;
+  }
   status.isRunning = false;
-  logger.info("Scheduler stopped");
+  logger.info('Scheduler stopped');
 }
 
 export function getSchedulerStatus(): SchedulerStatus {

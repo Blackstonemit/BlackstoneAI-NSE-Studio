@@ -1,42 +1,50 @@
-import { useState, useEffect, useRef } from "react";
-import { usePaperTrade, getLotSize, type Direction } from "@/hooks/use-paper-trade";
-import { useGetFutures } from "@workspace/api-client-react";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import {
-  X,
-  TrendingUp,
-  TrendingDown,
-  RotateCcw,
-  ChevronRight,
-} from "lucide-react";
+import { useState, useEffect, useRef } from 'react';
+import { usePaperTrade, getLotSize, type Direction } from '@/hooks/use-paper-trade';
+import { useGetFutures } from '@workspace/api-client-react';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { X, TrendingUp, TrendingDown, RotateCcw, ChevronRight } from 'lucide-react';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const fmt = (n: number) =>
-  new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(n);
-const fmtPnl = (n: number) =>
-  `${n >= 0 ? "+" : ""}₹${fmt(Math.abs(n))}`;
+const fmt = (n: number) => new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(n);
+const fmtPnl = (n: number) => `${n >= 0 ? '+' : ''}₹${fmt(Math.abs(n))}`;
 const fmtTime = (ts: number) => {
   const d = new Date(ts);
-  return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" });
+  return d.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'Asia/Kolkata',
+  });
 };
 
 // Common futures symbols for quick-pick
-const QUICK_SYMBOLS = ["NIFTY", "BANKNIFTY", "FINNIFTY", "RELIANCE", "TCS", "HDFCBANK", "INFY", "SBIN", "ICICIBANK", "AXISBANK"];
+const QUICK_SYMBOLS = [
+  'NIFTY',
+  'BANKNIFTY',
+  'FINNIFTY',
+  'RELIANCE',
+  'TCS',
+  'HDFCBANK',
+  'INFY',
+  'SBIN',
+  'ICICIBANK',
+  'AXISBANK',
+];
 
 // ── New Trade Form ─────────────────────────────────────────────────────────────
 function NewTradeForm({ prices }: { prices: Record<string, number> }) {
   const { addPosition } = usePaperTrade();
-  const [symbol, setSymbol] = useState("NIFTY");
-  const [customSymbol, setCustomSymbol] = useState("");
-  const [direction, setDirection] = useState<Direction>("BUY");
+  const [symbol, setSymbol] = useState('NIFTY');
+  const [customSymbol, setCustomSymbol] = useState('');
+  const [direction, setDirection] = useState<Direction>('BUY');
   const [lots, setLots] = useState(1);
-  const [priceInput, setPriceInput] = useState("");
+  const [priceInput, setPriceInput] = useState('');
   const [useMarket, setUseMarket] = useState(true);
 
   const activeSymbol = customSymbol.trim().toUpperCase() || symbol;
@@ -48,8 +56,8 @@ function NewTradeForm({ prices }: { prices: Record<string, number> }) {
   function handleSubmit() {
     if (!activeSymbol || entryPrice <= 0 || lots < 1) return;
     addPosition({ symbol: activeSymbol, direction, lots, lotSize, entryPrice });
-    setCustomSymbol("");
-    setPriceInput("");
+    setCustomSymbol('');
+    setPriceInput('');
     setUseMarket(true);
   }
 
@@ -62,12 +70,15 @@ function NewTradeForm({ prices }: { prices: Record<string, number> }) {
           {QUICK_SYMBOLS.map((s) => (
             <button
               key={s}
-              onClick={() => { setSymbol(s); setCustomSymbol(""); }}
+              onClick={() => {
+                setSymbol(s);
+                setCustomSymbol('');
+              }}
               className={cn(
-                "px-2 py-0.5 text-xs font-mono rounded-sm border transition-colors",
+                'px-2 py-0.5 text-xs font-mono rounded-sm border transition-colors',
                 activeSymbol === s && !customSymbol
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-muted text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'border-muted text-muted-foreground hover:border-primary/50 hover:text-foreground',
               )}
             >
               {s}
@@ -87,23 +98,23 @@ function NewTradeForm({ prices }: { prices: Record<string, number> }) {
         <div className="text-xs text-muted-foreground font-mono mb-2">DIRECTION</div>
         <div className="grid grid-cols-2 gap-2">
           <button
-            onClick={() => setDirection("BUY")}
+            onClick={() => setDirection('BUY')}
             className={cn(
-              "py-2 font-mono text-sm font-bold rounded-sm border transition-colors flex items-center justify-center gap-1",
-              direction === "BUY"
-                ? "bg-success/20 text-success border-success"
-                : "border-muted text-muted-foreground hover:border-success/50"
+              'py-2 font-mono text-sm font-bold rounded-sm border transition-colors flex items-center justify-center gap-1',
+              direction === 'BUY'
+                ? 'bg-success/20 text-success border-success'
+                : 'border-muted text-muted-foreground hover:border-success/50',
             )}
           >
             <TrendingUp className="h-3.5 w-3.5" /> BUY
           </button>
           <button
-            onClick={() => setDirection("SELL")}
+            onClick={() => setDirection('SELL')}
             className={cn(
-              "py-2 font-mono text-sm font-bold rounded-sm border transition-colors flex items-center justify-center gap-1",
-              direction === "SELL"
-                ? "bg-destructive/20 text-destructive border-destructive"
-                : "border-muted text-muted-foreground hover:border-destructive/50"
+              'py-2 font-mono text-sm font-bold rounded-sm border transition-colors flex items-center justify-center gap-1',
+              direction === 'SELL'
+                ? 'bg-destructive/20 text-destructive border-destructive'
+                : 'border-muted text-muted-foreground hover:border-destructive/50',
             )}
           >
             <TrendingDown className="h-3.5 w-3.5" /> SELL
@@ -120,7 +131,9 @@ function NewTradeForm({ prices }: { prices: Record<string, number> }) {
           <button
             onClick={() => setLots((l) => Math.max(1, l - 1))}
             className="w-8 h-8 rounded-sm border border-muted text-muted-foreground hover:border-primary/50 hover:text-foreground font-mono"
-          >−</button>
+          >
+            −
+          </button>
           <Input
             type="number"
             min={1}
@@ -131,7 +144,9 @@ function NewTradeForm({ prices }: { prices: Record<string, number> }) {
           <button
             onClick={() => setLots((l) => l + 1)}
             className="w-8 h-8 rounded-sm border border-muted text-muted-foreground hover:border-primary/50 hover:text-foreground font-mono"
-          >+</button>
+          >
+            +
+          </button>
         </div>
       </div>
 
@@ -142,17 +157,21 @@ function NewTradeForm({ prices }: { prices: Record<string, number> }) {
           <button
             onClick={() => setUseMarket(true)}
             className={cn(
-              "flex-1 py-1 text-xs font-mono rounded-sm border transition-colors",
-              useMarket ? "bg-primary/20 text-primary border-primary" : "border-muted text-muted-foreground hover:border-primary/50"
+              'flex-1 py-1 text-xs font-mono rounded-sm border transition-colors',
+              useMarket
+                ? 'bg-primary/20 text-primary border-primary'
+                : 'border-muted text-muted-foreground hover:border-primary/50',
             )}
           >
-            MARKET {marketPrice > 0 ? `(₹${fmt(marketPrice)})` : "(–)"}
+            MARKET {marketPrice > 0 ? `(₹${fmt(marketPrice)})` : '(–)'}
           </button>
           <button
             onClick={() => setUseMarket(false)}
             className={cn(
-              "flex-1 py-1 text-xs font-mono rounded-sm border transition-colors",
-              !useMarket ? "bg-primary/20 text-primary border-primary" : "border-muted text-muted-foreground hover:border-primary/50"
+              'flex-1 py-1 text-xs font-mono rounded-sm border transition-colors',
+              !useMarket
+                ? 'bg-primary/20 text-primary border-primary'
+                : 'border-muted text-muted-foreground hover:border-primary/50',
             )}
           >
             LIMIT
@@ -177,11 +196,11 @@ function NewTradeForm({ prices }: { prices: Record<string, number> }) {
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">ENTRY</span>
-          <span>₹{entryPrice > 0 ? fmt(entryPrice) : "–"}</span>
+          <span>₹{entryPrice > 0 ? fmt(entryPrice) : '–'}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">EST. MARGIN</span>
-          <span>₹{margin > 0 ? fmt(margin) : "–"}</span>
+          <span>₹{margin > 0 ? fmt(margin) : '–'}</span>
         </div>
       </div>
 
@@ -189,10 +208,10 @@ function NewTradeForm({ prices }: { prices: Record<string, number> }) {
         onClick={handleSubmit}
         disabled={entryPrice <= 0 || lots < 1}
         className={cn(
-          "w-full font-mono font-bold tracking-wider",
-          direction === "BUY"
-            ? "bg-success hover:bg-success/90 text-black"
-            : "bg-destructive hover:bg-destructive/90 text-white"
+          'w-full font-mono font-bold tracking-wider',
+          direction === 'BUY'
+            ? 'bg-success hover:bg-success/90 text-black'
+            : 'bg-destructive hover:bg-destructive/90 text-white',
         )}
       >
         {direction} {activeSymbol} FUT
@@ -218,7 +237,7 @@ function PositionsTab({ prices }: { prices: Record<string, number> }) {
     <div className="divide-y divide-muted">
       {positions.map((pos) => {
         const ltp = prices[pos.symbol] ?? pos.entryPrice;
-        const sign = pos.direction === "BUY" ? 1 : -1;
+        const sign = pos.direction === 'BUY' ? 1 : -1;
         const pnl = sign * (ltp - pos.entryPrice) * pos.lots * pos.lotSize;
         const pnlPct = ((ltp - pos.entryPrice) / pos.entryPrice) * 100 * sign;
         const isPositive = pnl >= 0;
@@ -232,8 +251,10 @@ function PositionsTab({ prices }: { prices: Record<string, number> }) {
                   <Badge
                     variant="outline"
                     className={cn(
-                      "text-[10px] px-1.5 py-0 font-mono",
-                      pos.direction === "BUY" ? "border-success text-success" : "border-destructive text-destructive"
+                      'text-[10px] px-1.5 py-0 font-mono',
+                      pos.direction === 'BUY'
+                        ? 'border-success text-success'
+                        : 'border-destructive text-destructive',
                     )}
                   >
                     {pos.direction}
@@ -245,11 +266,22 @@ function PositionsTab({ prices }: { prices: Record<string, number> }) {
                 </div>
               </div>
               <div className="text-right">
-                <div className={cn("font-mono font-bold text-sm", isPositive ? "text-success" : "text-destructive")}>
+                <div
+                  className={cn(
+                    'font-mono font-bold text-sm',
+                    isPositive ? 'text-success' : 'text-destructive',
+                  )}
+                >
                   {fmtPnl(pnl)}
                 </div>
-                <div className={cn("text-[11px] font-mono", isPositive ? "text-success/70" : "text-destructive/70")}>
-                  {pnlPct >= 0 ? "+" : ""}{pnlPct.toFixed(2)}%
+                <div
+                  className={cn(
+                    'text-[11px] font-mono',
+                    isPositive ? 'text-success/70' : 'text-destructive/70',
+                  )}
+                >
+                  {pnlPct >= 0 ? '+' : ''}
+                  {pnlPct.toFixed(2)}%
                 </div>
               </div>
             </div>
@@ -298,8 +330,10 @@ function HistoryTab() {
                   <Badge
                     variant="outline"
                     className={cn(
-                      "text-[10px] px-1.5 py-0 font-mono",
-                      t.direction === "BUY" ? "border-success text-success" : "border-destructive text-destructive"
+                      'text-[10px] px-1.5 py-0 font-mono',
+                      t.direction === 'BUY'
+                        ? 'border-success text-success'
+                        : 'border-destructive text-destructive',
                     )}
                   >
                     {t.direction}
@@ -310,7 +344,12 @@ function HistoryTab() {
                   <span className="ml-2 text-muted-foreground/50">{fmtTime(t.exitTime)}</span>
                 </div>
               </div>
-              <div className={cn("font-mono font-bold text-sm", isPositive ? "text-success" : "text-destructive")}>
+              <div
+                className={cn(
+                  'font-mono font-bold text-sm',
+                  isPositive ? 'text-success' : 'text-destructive',
+                )}
+              >
                 {fmtPnl(t.pnl)}
               </div>
             </div>
@@ -345,9 +384,11 @@ export function PaperTradePanel() {
 
   // Close on Escape
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") closePanel(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closePanel();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, [closePanel]);
 
   if (!state.isPanelOpen) return null;
@@ -355,10 +396,7 @@ export function PaperTradePanel() {
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-30 bg-black/40 backdrop-blur-[1px]"
-        onClick={closePanel}
-      />
+      <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-[1px]" onClick={closePanel} />
 
       {/* Panel */}
       <div
@@ -369,17 +407,24 @@ export function PaperTradePanel() {
         <div className="h-14 flex items-center justify-between px-4 border-b border-sidebar-border flex-shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            <span className="font-mono font-bold text-sm tracking-widest text-amber-400">PAPER TRADE</span>
+            <span className="font-mono font-bold text-sm tracking-widest text-amber-400">
+              PAPER TRADE
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => { if (confirm("Reset all paper trades? This cannot be undone.")) reset(); }}
+              onClick={() => {
+                if (confirm('Reset all paper trades? This cannot be undone.')) reset();
+              }}
               className="text-muted-foreground hover:text-foreground transition-colors p-1"
               title="Reset paper account"
             >
               <RotateCcw className="h-3.5 w-3.5" />
             </button>
-            <button onClick={closePanel} className="text-muted-foreground hover:text-foreground transition-colors p-1">
+            <button
+              onClick={closePanel}
+              className="text-muted-foreground hover:text-foreground transition-colors p-1"
+            >
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -394,20 +439,32 @@ export function PaperTradePanel() {
             </div>
             <div>
               <div className="text-[10px] text-muted-foreground font-mono mb-0.5">UNREALIZED</div>
-              <div className={cn("font-mono font-bold text-xs", unrealized >= 0 ? "text-success" : "text-destructive")}>
+              <div
+                className={cn(
+                  'font-mono font-bold text-xs',
+                  unrealized >= 0 ? 'text-success' : 'text-destructive',
+                )}
+              >
                 {fmtPnl(unrealized)}
               </div>
             </div>
             <div>
               <div className="text-[10px] text-muted-foreground font-mono mb-0.5">TOTAL P&L</div>
-              <div className={cn("font-mono font-bold text-xs", totalPnl >= 0 ? "text-success" : "text-destructive")}>
+              <div
+                className={cn(
+                  'font-mono font-bold text-xs',
+                  totalPnl >= 0 ? 'text-success' : 'text-destructive',
+                )}
+              >
                 {fmtPnl(totalPnl)}
               </div>
             </div>
           </div>
           {openCount > 0 && (
             <div className="mt-2 text-center">
-              <span className="text-[10px] font-mono text-amber-400/70">{openCount} OPEN POSITION{openCount > 1 ? "S" : ""}</span>
+              <span className="text-[10px] font-mono text-amber-400/70">
+                {openCount} OPEN POSITION{openCount > 1 ? 'S' : ''}
+              </span>
             </div>
           )}
         </div>
@@ -415,11 +472,16 @@ export function PaperTradePanel() {
         {/* Tabs */}
         <Tabs defaultValue="new" className="flex flex-col flex-1 min-h-0">
           <TabsList className="flex-shrink-0 mx-4 mt-3 mb-0 bg-muted/30 rounded-sm h-8">
-            <TabsTrigger value="new" className="flex-1 font-mono text-xs">NEW TRADE</TabsTrigger>
-            <TabsTrigger value="positions" className="flex-1 font-mono text-xs">
-              POSITIONS {openCount > 0 && <span className="ml-1 text-amber-400">({openCount})</span>}
+            <TabsTrigger value="new" className="flex-1 font-mono text-xs">
+              NEW TRADE
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex-1 font-mono text-xs">HISTORY</TabsTrigger>
+            <TabsTrigger value="positions" className="flex-1 font-mono text-xs">
+              POSITIONS{' '}
+              {openCount > 0 && <span className="ml-1 text-amber-400">({openCount})</span>}
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex-1 font-mono text-xs">
+              HISTORY
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="new" className="flex-1 min-h-0 mt-0">
@@ -461,9 +523,9 @@ export function PaperTradeToggle() {
     <button
       onClick={openPanel}
       className={cn(
-        "w-full flex items-center gap-3 px-3 py-2 text-sm font-mono font-bold rounded-sm transition-colors",
-        "border text-amber-400 border-amber-400/30 hover:bg-amber-400/10",
-        hasPositions && "animate-pulse"
+        'w-full flex items-center gap-3 px-3 py-2 text-sm font-mono font-bold rounded-sm transition-colors',
+        'border text-amber-400 border-amber-400/30 hover:bg-amber-400/10',
+        hasPositions && 'animate-pulse',
       )}
     >
       <ChevronRight className="h-4 w-4" />

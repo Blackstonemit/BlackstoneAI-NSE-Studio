@@ -1,24 +1,28 @@
-import { useState, useEffect } from "react";
-import { formatISTDate } from "@/lib/market-hours";
-import { useQueryClient } from "@tanstack/react-query";
-import { 
-  useGetFutures, 
-  getGetFuturesQueryKey
-} from "@workspace/api-client-react";
-import { useLiveRefresh } from "@/hooks/use-live-refresh";
-import { LiveRefreshBar } from "@/components/live-refresh-bar";
-import { TradeButtons } from "@/components/trade-buttons";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Search, ArrowUpIcon, ArrowDownIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState, useEffect } from 'react';
+import { formatISTDate } from '@/lib/market-hours';
+import { useQueryClient } from '@tanstack/react-query';
+import { useGetFutures, getGetFuturesQueryKey } from '@workspace/api-client-react';
+import { useLiveRefresh } from '@/hooks/use-live-refresh';
+import { LiveRefreshBar } from '@/components/live-refresh-bar';
+import { TradeButtons } from '@/components/trade-buttons';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Search, ArrowUpIcon, ArrowDownIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function FuturesFeed() {
-  const [searchInput, setSearchInput] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -30,7 +34,11 @@ export default function FuturesFeed() {
 
   const { data: futures, isLoading } = useGetFutures(
     debouncedSearch ? { symbol: debouncedSearch } : undefined,
-    { query: { queryKey: getGetFuturesQueryKey(debouncedSearch ? { symbol: debouncedSearch } : undefined) } }
+    {
+      query: {
+        queryKey: getGetFuturesQueryKey(debouncedSearch ? { symbol: debouncedSearch } : undefined),
+      },
+    },
   );
 
   const { isMarketOpen, isPreOpen, lastUpdatedIST, countdown, refresh } = useLiveRefresh({
@@ -51,10 +59,10 @@ export default function FuturesFeed() {
           countdown={countdown}
           onRefresh={refresh}
         />
-        
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
+          <Input
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className="pl-9 w-[250px] font-mono border-muted bg-card uppercase"
@@ -77,26 +85,49 @@ export default function FuturesFeed() {
                 <TableRow className="border-muted hover:bg-transparent">
                   <TableHead className="font-mono text-xs text-muted-foreground">SYMBOL</TableHead>
                   <TableHead className="font-mono text-xs text-muted-foreground">EXPIRY</TableHead>
-                  <TableHead className="font-mono text-xs text-muted-foreground text-right">LTP</TableHead>
-                  <TableHead className="font-mono text-xs text-muted-foreground text-right">CHG %</TableHead>
-                  <TableHead className="font-mono text-xs text-muted-foreground text-right">VOL</TableHead>
-                  <TableHead className="font-mono text-xs text-muted-foreground text-right">OI</TableHead>
-                  <TableHead className="font-mono text-xs text-muted-foreground text-right">BASIS</TableHead>
-                  <TableHead className="font-mono text-xs text-muted-foreground text-center">TRADE</TableHead>
+                  <TableHead className="font-mono text-xs text-muted-foreground text-right">
+                    LTP
+                  </TableHead>
+                  <TableHead className="font-mono text-xs text-muted-foreground text-right">
+                    CHG %
+                  </TableHead>
+                  <TableHead className="font-mono text-xs text-muted-foreground text-right">
+                    VOL
+                  </TableHead>
+                  <TableHead className="font-mono text-xs text-muted-foreground text-right">
+                    OI
+                  </TableHead>
+                  <TableHead className="font-mono text-xs text-muted-foreground text-right">
+                    BASIS
+                  </TableHead>
+                  <TableHead className="font-mono text-xs text-muted-foreground text-center">
+                    TRADE
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {futures.map((f) => (
-                  <TableRow key={`${f.symbol}-${f.expiry}`} className="border-muted hover:bg-muted/10">
+                  <TableRow
+                    key={`${f.symbol}-${f.expiry}`}
+                    className="border-muted hover:bg-muted/10"
+                  >
                     <TableCell className="font-bold">{f.symbol}</TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{formatISTDate(new Date(f.expiry))}</TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">
+                      {formatISTDate(new Date(f.expiry))}
+                    </TableCell>
                     <TableCell className="text-right font-mono">{f.ltp.toFixed(2)}</TableCell>
-                    <TableCell className={cn(
-                      "text-right font-mono",
-                      f.change >= 0 ? "text-success" : "text-destructive"
-                    )}>
+                    <TableCell
+                      className={cn(
+                        'text-right font-mono',
+                        f.change >= 0 ? 'text-success' : 'text-destructive',
+                      )}
+                    >
                       <div className="flex items-center justify-end">
-                        {f.change >= 0 ? <ArrowUpIcon className="h-3 w-3 mr-1" /> : <ArrowDownIcon className="h-3 w-3 mr-1" />}
+                        {f.change >= 0 ? (
+                          <ArrowUpIcon className="h-3 w-3 mr-1" />
+                        ) : (
+                          <ArrowDownIcon className="h-3 w-3 mr-1" />
+                        )}
                         {Math.abs(f.changePercent).toFixed(2)}%
                       </div>
                     </TableCell>
@@ -114,11 +145,14 @@ export default function FuturesFeed() {
                           ? `${(f.openInterest / 1_000).toFixed(1)}K`
                           : f.openInterest.toString()}
                     </TableCell>
-                    <TableCell className={cn(
-                      "text-right font-mono",
-                      f.basis > 0 ? "text-success" : "text-destructive"
-                    )}>
-                      {f.basis > 0 ? "+" : ""}{f.basis.toFixed(2)}
+                    <TableCell
+                      className={cn(
+                        'text-right font-mono',
+                        f.basis > 0 ? 'text-success' : 'text-destructive',
+                      )}
+                    >
+                      {f.basis > 0 ? '+' : ''}
+                      {f.basis.toFixed(2)}
                     </TableCell>
                     <TableCell className="text-center">
                       <TradeButtons symbol={f.symbol} price={f.ltp} />

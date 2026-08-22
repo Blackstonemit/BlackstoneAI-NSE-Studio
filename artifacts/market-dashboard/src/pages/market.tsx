@@ -1,21 +1,28 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { 
-  useGetMarketMovers, 
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  useGetMarketMovers,
   getGetMarketMoversQueryKey,
   useGetWatchlist,
   useGetMarketQuotes,
-  getGetMarketQuotesQueryKey
-} from "@workspace/api-client-react";
-import { useLiveRefresh } from "@/hooks/use-live-refresh";
-import { LiveRefreshBar } from "@/components/live-refresh-bar";
-import { TradeButtons } from "@/components/trade-buttons";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
-import { ArrowUpIcon, ArrowDownIcon } from "lucide-react";
+  getGetMarketQuotesQueryKey,
+} from '@workspace/api-client-react';
+import { useLiveRefresh } from '@/hooks/use-live-refresh';
+import { LiveRefreshBar } from '@/components/live-refresh-bar';
+import { TradeButtons } from '@/components/trade-buttons';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { cn } from '@/lib/utils';
+import { ArrowUpIcon, ArrowDownIcon } from 'lucide-react';
 
-function QuoteTable({ data, isLoading }: { data: any[], isLoading: boolean }) {
+function QuoteTable({ data, isLoading }: { data: any[]; isLoading: boolean }) {
   if (isLoading) {
     return (
       <div className="space-y-2 p-4">
@@ -25,7 +32,7 @@ function QuoteTable({ data, isLoading }: { data: any[], isLoading: boolean }) {
       </div>
     );
   }
-  
+
   if (!data || data.length === 0) {
     return <div className="p-8 text-center text-muted-foreground font-mono text-sm">NO DATA</div>;
   }
@@ -36,9 +43,13 @@ function QuoteTable({ data, isLoading }: { data: any[], isLoading: boolean }) {
         <TableRow className="border-muted hover:bg-transparent">
           <TableHead className="font-mono text-xs text-muted-foreground">SYMBOL</TableHead>
           <TableHead className="font-mono text-xs text-muted-foreground text-right">LTP</TableHead>
-          <TableHead className="font-mono text-xs text-muted-foreground text-right">CHG %</TableHead>
+          <TableHead className="font-mono text-xs text-muted-foreground text-right">
+            CHG %
+          </TableHead>
           <TableHead className="font-mono text-xs text-muted-foreground text-right">VOL</TableHead>
-          <TableHead className="font-mono text-xs text-muted-foreground text-center">TRADE</TableHead>
+          <TableHead className="font-mono text-xs text-muted-foreground text-center">
+            TRADE
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -46,12 +57,18 @@ function QuoteTable({ data, isLoading }: { data: any[], isLoading: boolean }) {
           <TableRow key={q.symbol} className="border-muted hover:bg-muted/10">
             <TableCell className="font-bold">{q.symbol}</TableCell>
             <TableCell className="text-right font-mono">{q.price.toFixed(2)}</TableCell>
-            <TableCell className={cn(
-              "text-right font-mono",
-              q.change >= 0 ? "text-success" : "text-destructive"
-            )}>
+            <TableCell
+              className={cn(
+                'text-right font-mono',
+                q.change >= 0 ? 'text-success' : 'text-destructive',
+              )}
+            >
               <div className="flex items-center justify-end">
-                {q.change >= 0 ? <ArrowUpIcon className="h-3 w-3 mr-1" /> : <ArrowDownIcon className="h-3 w-3 mr-1" />}
+                {q.change >= 0 ? (
+                  <ArrowUpIcon className="h-3 w-3 mr-1" />
+                ) : (
+                  <ArrowDownIcon className="h-3 w-3 mr-1" />
+                )}
                 {Math.abs(q.changePercent).toFixed(2)}%
               </div>
             </TableCell>
@@ -77,19 +94,26 @@ export default function MarketFeed() {
 
   const { data: movers, isLoading: loadingMovers } = useGetMarketMovers();
   const { data: watchlist } = useGetWatchlist();
-  
-  const watchlistSymbols = watchlist?.map(w => w.symbol).join(",") || "";
-  
+
+  const watchlistSymbols = watchlist?.map((w) => w.symbol).join(',') || '';
+
   const { data: quotes, isLoading: loadingQuotes } = useGetMarketQuotes(
     { symbols: watchlistSymbols },
-    { query: { enabled: !!watchlistSymbols, queryKey: getGetMarketQuotesQueryKey({ symbols: watchlistSymbols }) } }
+    {
+      query: {
+        enabled: !!watchlistSymbols,
+        queryKey: getGetMarketQuotesQueryKey({ symbols: watchlistSymbols }),
+      },
+    },
   );
 
   const { isMarketOpen, isPreOpen, lastUpdatedIST, countdown, refresh } = useLiveRefresh({
     onRefresh: () => {
       queryClient.invalidateQueries({ queryKey: getGetMarketMoversQueryKey() });
       if (watchlistSymbols) {
-        queryClient.invalidateQueries({ queryKey: getGetMarketQuotesQueryKey({ symbols: watchlistSymbols }) });
+        queryClient.invalidateQueries({
+          queryKey: getGetMarketQuotesQueryKey({ symbols: watchlistSymbols }),
+        });
       }
     },
   });
@@ -126,7 +150,7 @@ export default function MarketFeed() {
               <QuoteTable data={movers?.losers || []} isLoading={loadingMovers} />
             </CardContent>
           </Card>
-          
+
           <Card className="rounded-sm border-muted bg-card">
             <CardHeader className="p-4 border-b border-muted">
               <CardTitle className="text-sm font-mono text-primary">MOST ACTIVE</CardTitle>
@@ -144,7 +168,9 @@ export default function MarketFeed() {
             </CardHeader>
             <CardContent className="p-0">
               {!watchlistSymbols ? (
-                <div className="p-8 text-center text-muted-foreground font-mono text-sm">WATCHLIST IS EMPTY</div>
+                <div className="p-8 text-center text-muted-foreground font-mono text-sm">
+                  WATCHLIST IS EMPTY
+                </div>
               ) : (
                 <QuoteTable data={quotes || []} isLoading={loadingQuotes} />
               )}

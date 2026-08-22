@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   isMarketOpen,
   isPreOpenSession,
   getRefreshIntervalSecs,
   formatISTTime,
-} from "@/lib/market-hours";
-import { loadSettings } from "@/lib/settings";
+} from '@/lib/market-hours';
+import { loadSettings } from '@/lib/settings';
 
 export type UseLiveRefreshOptions = {
   onRefresh: () => void;

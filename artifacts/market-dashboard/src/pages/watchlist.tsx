@@ -1,32 +1,51 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { 
-  useGetWatchlist, 
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  useGetWatchlist,
   getGetWatchlistQueryKey,
   useAddToWatchlist,
   useRemoveFromWatchlist,
   AddWatchlistBodyExchange,
-  AddWatchlistBodyInstrumentType
-} from "@workspace/api-client-react";
-import { useLiveRefresh } from "@/hooks/use-live-refresh";
-import { LiveRefreshBar } from "@/components/live-refresh-bar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Trash2, Plus, Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
+  AddWatchlistBodyInstrumentType,
+} from '@workspace/api-client-react';
+import { useLiveRefresh } from '@/hooks/use-live-refresh';
+import { LiveRefreshBar } from '@/components/live-refresh-bar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Trash2, Plus, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
-type LiveQuote = { symbol: string; name: string; price: number; change: number; changePercent: number };
+type LiveQuote = {
+  symbol: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+};
 
 export default function WatchlistBoard() {
-  const [symbol, setSymbol] = useState("");
-  const [name, setName] = useState("");
-  const [exchange, setExchange] = useState<AddWatchlistBodyExchange>("NSE");
-  const [type, setType] = useState<AddWatchlistBodyInstrumentType>("STOCK");
+  const [symbol, setSymbol] = useState('');
+  const [name, setName] = useState('');
+  const [exchange, setExchange] = useState<AddWatchlistBodyExchange>('NSE');
+  const [type, setType] = useState<AddWatchlistBodyInstrumentType>('STOCK');
   const [liveQuotes, setLiveQuotes] = useState<Record<string, LiveQuote>>({});
   const [quotesLoading, setQuotesLoading] = useState(false);
   const fetchAbortRef = useRef<AbortController | null>(null);
@@ -37,21 +56,26 @@ export default function WatchlistBoard() {
   const { data: watchlist, isLoading } = useGetWatchlist();
 
   const fetchQuotes = useCallback(async (symbols: string[]) => {
-    if (symbols.length === 0) { setLiveQuotes({}); return; }
+    if (symbols.length === 0) {
+      setLiveQuotes({});
+      return;
+    }
     fetchAbortRef.current?.abort();
     const controller = new AbortController();
     fetchAbortRef.current = controller;
     setQuotesLoading(true);
     try {
-      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const res = await fetch(`${base}/api/market/quotes?symbols=${symbols.join(",")}`, { signal: controller.signal });
+      const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+      const res = await fetch(`${base}/api/market/quotes?symbols=${symbols.join(',')}`, {
+        signal: controller.signal,
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: LiveQuote[] = await res.json();
       const map: Record<string, LiveQuote> = {};
       for (const q of data) map[q.symbol] = q;
       setLiveQuotes(map);
     } catch (err) {
-      if ((err as Error).name === "AbortError") return;
+      if ((err as Error).name === 'AbortError') return;
     } finally {
       if (!controller.signal.aborted) setQuotesLoading(false);
     }
@@ -70,7 +94,7 @@ export default function WatchlistBoard() {
       fetchQuotes(watchlistSymbols.current);
     },
   });
-  
+
   const addMutation = useAddToWatchlist();
   const removeMutation = useRemoveFromWatchlist();
 
@@ -78,36 +102,49 @@ export default function WatchlistBoard() {
     e.preventDefault();
     if (!symbol.trim() || !name.trim()) return;
 
-    addMutation.mutate({
-      data: {
-        symbol: symbol.trim().toUpperCase(),
-        name: name.trim(),
-        exchange,
-        instrumentType: type
-      }
-    }, {
-      onSuccess: () => {
-        toast({ title: "Added to Watchlist", description: `${symbol.toUpperCase()} has been added.` });
-        setSymbol("");
-        setName("");
-        queryClient.invalidateQueries({ queryKey: getGetWatchlistQueryKey() });
+    addMutation.mutate(
+      {
+        data: {
+          symbol: symbol.trim().toUpperCase(),
+          name: name.trim(),
+          exchange,
+          instrumentType: type,
+        },
       },
-      onError: () => {
-        toast({ title: "Error", description: "Failed to add symbol.", variant: "destructive" });
-      }
-    });
+      {
+        onSuccess: () => {
+          toast({
+            title: 'Added to Watchlist',
+            description: `${symbol.toUpperCase()} has been added.`,
+          });
+          setSymbol('');
+          setName('');
+          queryClient.invalidateQueries({ queryKey: getGetWatchlistQueryKey() });
+        },
+        onError: () => {
+          toast({ title: 'Error', description: 'Failed to add symbol.', variant: 'destructive' });
+        },
+      },
+    );
   };
 
   const handleRemove = (id: number, sym: string) => {
-    removeMutation.mutate({ id }, {
-      onSuccess: () => {
-        toast({ title: "Removed", description: `${sym} has been removed from watchlist.` });
-        queryClient.invalidateQueries({ queryKey: getGetWatchlistQueryKey() });
+    removeMutation.mutate(
+      { id },
+      {
+        onSuccess: () => {
+          toast({ title: 'Removed', description: `${sym} has been removed from watchlist.` });
+          queryClient.invalidateQueries({ queryKey: getGetWatchlistQueryKey() });
+        },
+        onError: () => {
+          toast({
+            title: 'Error',
+            description: 'Failed to remove symbol.',
+            variant: 'destructive',
+          });
+        },
       },
-      onError: () => {
-        toast({ title: "Error", description: "Failed to remove symbol.", variant: "destructive" });
-      }
-    });
+    );
   };
 
   return (
@@ -132,9 +169,9 @@ export default function WatchlistBoard() {
           <form onSubmit={handleAdd} className="flex flex-col md:flex-row gap-4 items-end">
             <div className="space-y-2 flex-1 w-full">
               <label className="text-xs font-mono text-muted-foreground">SYMBOL</label>
-              <Input 
+              <Input
                 value={symbol}
-                onChange={e => setSymbol(e.target.value)}
+                onChange={(e) => setSymbol(e.target.value)}
                 placeholder="e.g. RELIANCE"
                 className="font-mono uppercase bg-background"
                 required
@@ -142,9 +179,9 @@ export default function WatchlistBoard() {
             </div>
             <div className="space-y-2 flex-1 w-full">
               <label className="text-xs font-mono text-muted-foreground">COMPANY NAME</label>
-              <Input 
+              <Input
                 value={name}
-                onChange={e => setName(e.target.value)}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Reliance Industries"
                 className="font-mono bg-background"
                 required
@@ -152,7 +189,10 @@ export default function WatchlistBoard() {
             </div>
             <div className="space-y-2 w-full md:w-[150px]">
               <label className="text-xs font-mono text-muted-foreground">EXCHANGE</label>
-              <Select value={exchange} onValueChange={(v: AddWatchlistBodyExchange) => setExchange(v)}>
+              <Select
+                value={exchange}
+                onValueChange={(v: AddWatchlistBodyExchange) => setExchange(v)}
+              >
                 <SelectTrigger className="font-mono bg-background">
                   <SelectValue />
                 </SelectTrigger>
@@ -164,7 +204,10 @@ export default function WatchlistBoard() {
             </div>
             <div className="space-y-2 w-full md:w-[150px]">
               <label className="text-xs font-mono text-muted-foreground">TYPE</label>
-              <Select value={type} onValueChange={(v: AddWatchlistBodyInstrumentType) => setType(v)}>
+              <Select
+                value={type}
+                onValueChange={(v: AddWatchlistBodyInstrumentType) => setType(v)}
+              >
                 <SelectTrigger className="font-mono bg-background">
                   <SelectValue />
                 </SelectTrigger>
@@ -176,12 +219,16 @@ export default function WatchlistBoard() {
                 </SelectContent>
               </Select>
             </div>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={addMutation.isPending || !symbol || !name}
               className="w-full md:w-auto font-mono bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {addMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
+              {addMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4 mr-2" />
+              )}
               ADD
             </Button>
           </form>
@@ -202,11 +249,19 @@ export default function WatchlistBoard() {
                 <TableRow className="border-muted hover:bg-transparent bg-muted/5">
                   <TableHead className="font-mono text-xs text-muted-foreground">SYMBOL</TableHead>
                   <TableHead className="font-mono text-xs text-muted-foreground">NAME</TableHead>
-                  <TableHead className="font-mono text-xs text-muted-foreground text-right">LTP</TableHead>
-                  <TableHead className="font-mono text-xs text-muted-foreground text-right">CHG %</TableHead>
-                  <TableHead className="font-mono text-xs text-muted-foreground">EXCHANGE</TableHead>
+                  <TableHead className="font-mono text-xs text-muted-foreground text-right">
+                    LTP
+                  </TableHead>
+                  <TableHead className="font-mono text-xs text-muted-foreground text-right">
+                    CHG %
+                  </TableHead>
+                  <TableHead className="font-mono text-xs text-muted-foreground">
+                    EXCHANGE
+                  </TableHead>
                   <TableHead className="font-mono text-xs text-muted-foreground">TYPE</TableHead>
-                  <TableHead className="font-mono text-xs text-muted-foreground text-right">ACTION</TableHead>
+                  <TableHead className="font-mono text-xs text-muted-foreground text-right">
+                    ACTION
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -214,33 +269,43 @@ export default function WatchlistBoard() {
                   const q = liveQuotes[item.symbol];
                   const up = (q?.changePercent ?? 0) >= 0;
                   return (
-                  <TableRow key={item.id} className="border-muted hover:bg-muted/10">
-                    <TableCell className="font-bold">{item.symbol}</TableCell>
-                    <TableCell className="text-muted-foreground">{item.name}</TableCell>
-                    <TableCell className="text-right font-mono tabular-nums">
-                      {q ? q.price.toFixed(2) : <span className="text-muted-foreground/40">—</span>}
-                    </TableCell>
-                    <TableCell className={`text-right font-mono tabular-nums text-xs ${q ? (up ? "text-green-400" : "text-red-400") : "text-muted-foreground/40"}`}>
-                      {q ? `${up ? "+" : ""}${q.changePercent.toFixed(2)}%` : "—"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="font-mono text-xs border-muted">{item.exchange}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="font-mono text-xs bg-muted/50">{item.instrumentType}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleRemove(item.id, item.symbol)}
-                        disabled={removeMutation.isPending}
-                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    <TableRow key={item.id} className="border-muted hover:bg-muted/10">
+                      <TableCell className="font-bold">{item.symbol}</TableCell>
+                      <TableCell className="text-muted-foreground">{item.name}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">
+                        {q ? (
+                          q.price.toFixed(2)
+                        ) : (
+                          <span className="text-muted-foreground/40">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell
+                        className={`text-right font-mono tabular-nums text-xs ${q ? (up ? 'text-green-400' : 'text-red-400') : 'text-muted-foreground/40'}`}
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                        {q ? `${up ? '+' : ''}${q.changePercent.toFixed(2)}%` : '—'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-mono text-xs border-muted">
+                          {item.exchange}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="font-mono text-xs bg-muted/50">
+                          {item.instrumentType}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemove(item.id, item.symbol)}
+                          disabled={removeMutation.isPending}
+                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
               </TableBody>

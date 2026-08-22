@@ -1,26 +1,26 @@
-import { lazy, Suspense } from "react";
-import { Switch, Route, Router as WouterRouter } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Layout } from "@/components/layout";
-import { Loader2 } from "lucide-react";
+import { lazy, Suspense } from 'react';
+import { Switch, Route, Router as WouterRouter } from 'wouter';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Layout } from '@/components/layout';
+import { Loader2 } from 'lucide-react';
 
-const Dashboard = lazy(() => import("@/pages/dashboard"));
-const SignalsBoard = lazy(() => import("@/pages/signals"));
-const MarketFeed = lazy(() => import("@/pages/market"));
-const OptionsChain = lazy(() => import("@/pages/options"));
-const FuturesFeed = lazy(() => import("@/pages/futures"));
-const AnalysisBoard = lazy(() => import("@/pages/analysis"));
-const WatchlistBoard = lazy(() => import("@/pages/watchlist"));
-const BacktestPage = lazy(() => import("@/pages/backtest"));
-const SettingsDashboard = lazy(() => import("@/pages/settings"));
-const ChartsPage = lazy(() => import("@/pages/charts"));
-const BhavcopyPage = lazy(() => import("@/pages/bhavcopy"));
-const ScalpingPage = lazy(() => import("@/pages/scalping"));
-const MultibaggerPage = lazy(() => import("@/pages/multibagger"));
-const AlertsPage = lazy(() => import("@/pages/alerts"));
-const NotFound = lazy(() => import("@/pages/not-found"));
+const Dashboard = lazy(() => import('@/pages/dashboard'));
+const SignalsBoard = lazy(() => import('@/pages/signals'));
+const MarketFeed = lazy(() => import('@/pages/market'));
+const OptionsChain = lazy(() => import('@/pages/options'));
+const FuturesFeed = lazy(() => import('@/pages/futures'));
+const AnalysisBoard = lazy(() => import('@/pages/analysis'));
+const WatchlistBoard = lazy(() => import('@/pages/watchlist'));
+const BacktestPage = lazy(() => import('@/pages/backtest'));
+const SettingsDashboard = lazy(() => import('@/pages/settings'));
+const ChartsPage = lazy(() => import('@/pages/charts'));
+const BhavcopyPage = lazy(() => import('@/pages/bhavcopy'));
+const ScalpingPage = lazy(() => import('@/pages/scalping'));
+const MultibaggerPage = lazy(() => import('@/pages/multibagger'));
+const AlertsPage = lazy(() => import('@/pages/alerts'));
+const NotFound = lazy(() => import('@/pages/not-found'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -67,7 +67,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
           <Router />
         </WouterRouter>
         <Toaster />

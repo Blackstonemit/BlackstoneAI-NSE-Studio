@@ -1,14 +1,14 @@
-import { Router, type IRouter } from "express";
-import healthRouter from "./health";
-import marketRouter from "./market";
-import analysisRouter from "./analysis";
-import signalsRouter from "./signals";
-import watchlistRouter from "./watchlist";
-import alertsRouter from "./alerts";
-import screenerRouter from "./screener";
-import agentRouter from "./agent";
-import schedulerRouter from "./scheduler";
-import aiProvidersRouter from "./ai-providers";
+import { Router, type IRouter } from 'express';
+import healthRouter from './health';
+import marketRouter from './market';
+import analysisRouter from './analysis';
+import signalsRouter from './signals';
+import watchlistRouter from './watchlist';
+import alertsRouter from './alerts';
+import screenerRouter from './screener';
+import agentRouter from './agent';
+import schedulerRouter from './scheduler';
+import aiProvidersRouter from './ai-providers';
 
 const router: IRouter = Router();
 

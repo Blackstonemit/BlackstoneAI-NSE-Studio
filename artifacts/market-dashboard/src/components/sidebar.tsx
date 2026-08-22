@@ -1,10 +1,10 @@
-import { Link, useLocation } from "wouter";
-import { 
-  Activity, 
-  LineChart, 
-  BarChart2, 
-  Layers, 
-  TrendingUp, 
+import { Link, useLocation } from 'wouter';
+import {
+  Activity,
+  LineChart,
+  BarChart2,
+  Layers,
+  TrendingUp,
   List,
   TerminalSquare,
   FlaskConical,
@@ -14,25 +14,25 @@ import {
   Zap,
   Rocket,
   Bell,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { PaperTradeToggle } from "./paper-trade-panel";
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { PaperTradeToggle } from './paper-trade-panel';
 
 const navItems = [
-  { href: "/", label: "Live Dashboard", icon: Activity },
-  { href: "/signals", label: "Signals Board", icon: TerminalSquare },
-  { href: "/market", label: "Market Feed", icon: LineChart },
-  { href: "/options", label: "Options Chain", icon: Layers },
-  { href: "/futures", label: "Futures", icon: BarChart2 },
-  { href: "/analysis", label: "Technical Analysis", icon: TrendingUp },
-  { href: "/charts", label: "Charts", icon: CandlestickChart },
-  { href: "/backtest", label: "Backtest", icon: FlaskConical },
-  { href: "/bhavcopy", label: "Bhavcopy", icon: PackageOpen },
-  { href: "/scalping", label: "Scalp Desk (5M)", icon: Zap },
-  { href: "/multibagger", label: "Multibagger Screen", icon: Rocket },
-  { href: "/alerts", label: "Price Alerts", icon: Bell },
-  { href: "/watchlist", label: "Watchlist", icon: List },
-  { href: "/settings", label: "Settings", icon: Settings2 },
+  { href: '/', label: 'Live Dashboard', icon: Activity },
+  { href: '/signals', label: 'Signals Board', icon: TerminalSquare },
+  { href: '/market', label: 'Market Feed', icon: LineChart },
+  { href: '/options', label: 'Options Chain', icon: Layers },
+  { href: '/futures', label: 'Futures', icon: BarChart2 },
+  { href: '/analysis', label: 'Technical Analysis', icon: TrendingUp },
+  { href: '/charts', label: 'Charts', icon: CandlestickChart },
+  { href: '/backtest', label: 'Backtest', icon: FlaskConical },
+  { href: '/bhavcopy', label: 'Bhavcopy', icon: PackageOpen },
+  { href: '/scalping', label: 'Scalp Desk (5M)', icon: Zap },
+  { href: '/multibagger', label: 'Multibagger Screen', icon: Rocket },
+  { href: '/alerts', label: 'Price Alerts', icon: Bell },
+  { href: '/watchlist', label: 'Watchlist', icon: List },
+  { href: '/settings', label: 'Settings', icon: Settings2 },
 ];
 
 export function Sidebar() {
@@ -54,10 +54,10 @@ export function Sidebar() {
               <Link key={item.href} href={item.href} className="block">
                 <div
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-sm transition-colors",
+                    'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-sm transition-colors',
                     isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                      : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
                   )}
                 >
                   <item.icon className="h-4 w-4" />

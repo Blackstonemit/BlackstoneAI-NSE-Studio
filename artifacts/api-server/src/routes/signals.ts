@@ -1,35 +1,24 @@
-import { Router, type IRouter } from "express";
-import { GetSignalsQueryParams, GetSignalParams } from "@workspace/api-zod";
-import { db } from "@workspace/db";
-import { signals } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
-import { callWithFallback } from "../lib/multi-ai";
-import { computeTechnicals } from "./analysis";
-import { extractFirstJSON } from "../lib/json-extract";
+import { Router, type IRouter } from 'express';
+import { GetSignalsQueryParams, GetSignalParams } from '@workspace/api-zod';
+import { db } from '@workspace/db';
+import { signals } from '@workspace/db';
+import { eq, desc } from 'drizzle-orm';
+import { callWithFallback } from '../lib/multi-ai';
+import { computeTechnicals } from './analysis';
+import { extractFirstJSON } from '../lib/json-extract';
 
 const router: IRouter = Router();
 
-router.get("/signals", async (req, res) => {
+router.get('/signals', async (req, res) => {
   try {
     const query = GetSignalsQueryParams.parse(req.query);
 
     const allSignals = await db.select().from(signals).orderBy(desc(signals.createdAt));
 
     const filtered = allSignals.filter((s) => {
-      if (query.type && query.type !== "ALL" && s.instrumentType !== query.type)
-        return false;
-      if (
-        query.action &&
-        query.action !== "ALL" &&
-        s.action !== query.action
-      )
-        return false;
-      if (
-        query.status &&
-        query.status !== "ALL" &&
-        s.status !== query.status
-      )
-        return false;
+      if (query.type && query.type !== 'ALL' && s.instrumentType !== query.type) return false;
+      if (query.action && query.action !== 'ALL' && s.action !== query.action) return false;
+      if (query.status && query.status !== 'ALL' && s.status !== query.status) return false;
       return true;
     });
 
@@ -38,24 +27,21 @@ router.get("/signals", async (req, res) => {
         ...s,
         createdAt: s.createdAt.toISOString(),
         expiresAt: s.expiresAt?.toISOString() ?? null,
-      }))
+      })),
     );
   } catch (err) {
-    req.log.error({ err }, "Failed to fetch signals");
-    res.status(500).json({ error: "Failed to fetch signals" });
+    req.log.error({ err }, 'Failed to fetch signals');
+    res.status(500).json({ error: 'Failed to fetch signals' });
   }
 });
 
-router.get("/signals/:id", async (req, res) => {
+router.get('/signals/:id', async (req, res) => {
   try {
     const params = GetSignalParams.parse({ id: req.params.id });
-    const [signal] = await db
-      .select()
-      .from(signals)
-      .where(eq(signals.id, params.id));
+    const [signal] = await db.select().from(signals).where(eq(signals.id, params.id));
 
     if (!signal) {
-      res.status(404).json({ error: "Signal not found" });
+      res.status(404).json({ error: 'Signal not found' });
       return;
     }
 
@@ -65,22 +51,20 @@ router.get("/signals/:id", async (req, res) => {
       expiresAt: signal.expiresAt?.toISOString() ?? null,
     });
   } catch (err) {
-    req.log.error({ err }, "Failed to fetch signal");
-    res.status(500).json({ error: "Failed to fetch signal" });
+    req.log.error({ err }, 'Failed to fetch signal');
+    res.status(500).json({ error: 'Failed to fetch signal' });
   }
 });
 
-router.post("/signals/generate", async (req, res) => {
+router.post('/signals/generate', async (req, res) => {
   try {
-    const { symbols = [], timeframe = "INTRADAY" } = req.body as {
+    const { symbols = [], timeframe = 'INTRADAY' } = req.body as {
       symbols?: string[];
       timeframe?: string;
     };
 
     const targetSymbols =
-      symbols.length > 0
-        ? symbols
-        : ["NIFTY", "BANKNIFTY", "RELIANCE", "TCS", "HDFCBANK"];
+      symbols.length > 0 ? symbols : ['NIFTY', 'BANKNIFTY', 'RELIANCE', 'TCS', 'HDFCBANK'];
 
     const newSignals = [];
 
@@ -99,7 +83,7 @@ router.post("/signals/generate", async (req, res) => {
 Always respond with valid JSON only. No markdown, no explanation outside JSON.`;
 
         const userPrompt = `Analyze ${symbol} and generate a trading signal based on this data:
-RSI: ${techData.rsi ?? "N/A"}
+RSI: ${techData.rsi ?? 'N/A'}
 MACD: ${JSON.stringify(techData.macd)}
 Trend: ${techData.trend}
 Overall Signal: ${techData.overallSignal}
@@ -122,10 +106,10 @@ Generate a JSON signal with this exact structure:
 
         const { content } = await callWithFallback(
           [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
           ],
-          { maxTokens: 1024 }
+          { maxTokens: 1024 },
         );
         let signalData: any;
 
@@ -139,12 +123,19 @@ Generate a JSON signal with this exact structure:
         const istOffsetMs = 5.5 * 60 * 60 * 1000;
         const nowIST = new Date(now.getTime() + istOffsetMs);
         let expiresAt: Date;
-        if (timeframe === "INTRADAY") {
+        if (timeframe === 'INTRADAY') {
           // Market closes at 15:30 IST = 10:00 UTC
-          expiresAt = new Date(Date.UTC(
-            nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate(),
-            10, 0, 0, 0
-          ));
+          expiresAt = new Date(
+            Date.UTC(
+              nowIST.getUTCFullYear(),
+              nowIST.getUTCMonth(),
+              nowIST.getUTCDate(),
+              10,
+              0,
+              0,
+              0,
+            ),
+          );
           // If market close has already passed today, set to next trading day
           if (expiresAt <= now) {
             expiresAt = new Date(expiresAt.getTime() + 24 * 60 * 60 * 1000);
@@ -153,7 +144,7 @@ Generate a JSON signal with this exact structure:
             if (day === 6) expiresAt = new Date(expiresAt.getTime() + 2 * 24 * 60 * 60 * 1000);
             else if (day === 0) expiresAt = new Date(expiresAt.getTime() + 1 * 24 * 60 * 60 * 1000);
           }
-        } else if (timeframe === "SWING") {
+        } else if (timeframe === 'SWING') {
           expiresAt = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
         } else {
           expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -163,15 +154,15 @@ Generate a JSON signal with this exact structure:
           .insert(signals)
           .values({
             symbol,
-            instrumentType: signalData.instrumentType || "STOCK",
-            action: signalData.action || "HOLD",
+            instrumentType: signalData.instrumentType || 'STOCK',
+            action: signalData.action || 'HOLD',
             displayText: signalData.displayText || `${signalData.action} ${symbol}`,
             entryPrice: signalData.entryPrice ?? null,
             targetPrice: signalData.targetPrice ?? null,
             stopLoss: signalData.stopLoss ?? null,
             confidence: Math.min(100, Math.max(0, signalData.confidence ?? 50)),
-            rationale: signalData.rationale || "Technical analysis signal",
-            status: "ACTIVE",
+            rationale: signalData.rationale || 'Technical analysis signal',
+            status: 'ACTIVE',
             timeframe,
             expiresAt,
           })
@@ -183,14 +174,14 @@ Generate a JSON signal with this exact structure:
           expiresAt: inserted.expiresAt?.toISOString() ?? null,
         });
       } catch (err) {
-        req.log.warn({ err, symbol }, "Failed to generate signal for symbol");
+        req.log.warn({ err, symbol }, 'Failed to generate signal for symbol');
       }
     }
 
     res.json(newSignals);
   } catch (err) {
-    req.log.error({ err }, "Failed to generate signals");
-    res.status(500).json({ error: "Failed to generate signals" });
+    req.log.error({ err }, 'Failed to generate signals');
+    res.status(500).json({ error: 'Failed to generate signals' });
   }
 });
 

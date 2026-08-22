@@ -1,52 +1,106 @@
-import { Router, type IRouter } from "express";
-import YahooFinanceClass from "yahoo-finance2";
+import { Router, type IRouter } from 'express';
+import YahooFinanceClass from 'yahoo-finance2';
 const yahooFinance = new (YahooFinanceClass as any)();
-import { computeTechnicals } from "./analysis";
-import { callWithFallback } from "../lib/multi-ai";
-import { extractFirstJSON } from "../lib/json-extract";
+import { computeTechnicals } from './analysis';
+import { callWithFallback } from '../lib/multi-ai';
+import { extractFirstJSON } from '../lib/json-extract';
 
 const router: IRouter = Router();
 
 const SCREENER_PRESETS: Record<string, { query: string; criteria: string; symbols: string[] }> = {
   multibagger: {
-    query: "Market Capitalization < 500 AND Current Price < 100 AND EPS > 0 AND \"Sales growth 5Years\" > 15 AND \"Profit growth 5years\" > 15",
-    criteria: "Market Cap < ₹500Cr, Price < ₹100, EPS > 0, 5yr Sales Growth > 15%, 5yr Profit Growth > 15%",
+    query:
+      'Market Capitalization < 500 AND Current Price < 100 AND EPS > 0 AND "Sales growth 5Years" > 15 AND "Profit growth 5years" > 15',
+    criteria:
+      'Market Cap < ₹500Cr, Price < ₹100, EPS > 0, 5yr Sales Growth > 15%, 5yr Profit Growth > 15%',
     symbols: [
-      "RVNL.NS", "IRFC.NS", "HAL.NS", "BEL.NS", "CDSL.NS",
-      "IRCON.NS", "RITES.NS", "NBCC.NS", "SJVN.NS", "NHPC.NS",
-      "PNBHOUSING.NS", "KARURVYSYA.NS", "SOUTHBANK.NS", "FEDERALBNK.NS",
-      "TATAELXSI.NS", "PERSISTENT.NS", "COFORGE.NS", "MPHASIS.NS",
-      "ZOMATO.NS", "NYKAA.NS", "POLICYBZR.NS",
-      "SUZLON.NS", "INOXWIND.NS", "ORIENTELEC.NS", "KPITTECH.NS",
+      'RVNL.NS',
+      'IRFC.NS',
+      'HAL.NS',
+      'BEL.NS',
+      'CDSL.NS',
+      'IRCON.NS',
+      'RITES.NS',
+      'NBCC.NS',
+      'SJVN.NS',
+      'NHPC.NS',
+      'PNBHOUSING.NS',
+      'KARURVYSYA.NS',
+      'SOUTHBANK.NS',
+      'FEDERALBNK.NS',
+      'TATAELXSI.NS',
+      'PERSISTENT.NS',
+      'COFORGE.NS',
+      'MPHASIS.NS',
+      'ZOMATO.NS',
+      'NYKAA.NS',
+      'POLICYBZR.NS',
+      'SUZLON.NS',
+      'INOXWIND.NS',
+      'ORIENTELEC.NS',
+      'KPITTECH.NS',
     ],
   },
   penny: {
-    query: "Market Capitalization < 100 AND Current Price < 20",
-    criteria: "Market Cap < ₹100Cr, Price < ₹20",
+    query: 'Market Capitalization < 100 AND Current Price < 20',
+    criteria: 'Market Cap < ₹100Cr, Price < ₹20',
     symbols: [
-      "SUZLON.NS", "YAARI.NS", "ORIENTELEC.NS", "RBLBANK.NS", "IDEA.NS",
-      "JBCHEPHARM.NS", "STELMON.NS", "PRECWIRE.NS", "GTLINFRA.NS",
-      "OPTIEMUS.NS", "CERA.NS", "JTLIND.NS", "TAPIFRUIT.NS", "PAYTM.NS",
+      'SUZLON.NS',
+      'YAARI.NS',
+      'ORIENTELEC.NS',
+      'RBLBANK.NS',
+      'IDEA.NS',
+      'JBCHEPHARM.NS',
+      'STELMON.NS',
+      'PRECWIRE.NS',
+      'GTLINFRA.NS',
+      'OPTIEMUS.NS',
+      'CERA.NS',
+      'JTLIND.NS',
+      'TAPIFRUIT.NS',
+      'PAYTM.NS',
     ],
   },
   turnaround: {
-    query: "Market Capitalization < 1000 AND \"Profit growth 5years\" > 20 AND \"Debt to equity\" < 1",
-    criteria: "Market Cap < ₹1000Cr, 5yr Profit Growth > 20%, Debt/Equity < 1",
+    query: 'Market Capitalization < 1000 AND "Profit growth 5years" > 20 AND "Debt to equity" < 1',
+    criteria: 'Market Cap < ₹1000Cr, 5yr Profit Growth > 20%, Debt/Equity < 1',
     symbols: [
-      "BALRAMCHIN.NS", "DHAMPUR.NS", "TRIVENI.NS", "GMRINFRA.NS",
-      "JPPOWER.NS", "ADANIPOWER.NS", "RELPOWER.NS", "THERMAX.NS",
-      "CESC.NS", "KALPATPOWR.NS", "TORNTPOWER.NS", "TATAPOWER.NS",
-      "RECLTD.NS", "PFC.NS", "IREDA.NS",
+      'BALRAMCHIN.NS',
+      'DHAMPUR.NS',
+      'TRIVENI.NS',
+      'GMRINFRA.NS',
+      'JPPOWER.NS',
+      'ADANIPOWER.NS',
+      'RELPOWER.NS',
+      'THERMAX.NS',
+      'CESC.NS',
+      'KALPATPOWR.NS',
+      'TORNTPOWER.NS',
+      'TATAPOWER.NS',
+      'RECLTD.NS',
+      'PFC.NS',
+      'IREDA.NS',
     ],
   },
   growth: {
-    query: "Market Capitalization < 2000 AND \"Sales growth 5Years\" > 25 AND ROCE > 20",
-    criteria: "Market Cap < ₹2000Cr, 5yr Sales Growth > 25%, ROCE > 20%",
+    query: 'Market Capitalization < 2000 AND "Sales growth 5Years" > 25 AND ROCE > 20',
+    criteria: 'Market Cap < ₹2000Cr, 5yr Sales Growth > 25%, ROCE > 20%',
     symbols: [
-      "ASTRAL.NS", "POLYCAB.NS", "DIXON.NS", "AMBER.NS", "DMART.NS",
-      "LAXMIMACH.NS", "ELGIEQUIP.NS", "GRINDWELL.NS", "SUPRAJIT.NS",
-      "GARFIBRES.NS", "VARROC.NS", "ENDURANCE.NS", "MUTHOOTFIN.NS",
-      "CHOLAFIN.NS", "AAVAS.NS",
+      'ASTRAL.NS',
+      'POLYCAB.NS',
+      'DIXON.NS',
+      'AMBER.NS',
+      'DMART.NS',
+      'LAXMIMACH.NS',
+      'ELGIEQUIP.NS',
+      'GRINDWELL.NS',
+      'SUPRAJIT.NS',
+      'GARFIBRES.NS',
+      'VARROC.NS',
+      'ENDURANCE.NS',
+      'MUTHOOTFIN.NS',
+      'CHOLAFIN.NS',
+      'AAVAS.NS',
     ],
   },
 };
@@ -93,7 +147,7 @@ function calcMultibaggerScore(stock: {
 }
 
 async function fetchFromScreenerIn(
-  preset: string
+  preset: string,
 ): Promise<{ stocks: Array<Record<string, unknown>>; fromLive: boolean }> {
   const presetConfig = SCREENER_PRESETS[preset] ?? SCREENER_PRESETS.multibagger;
   const url = `https://www.screener.in/screen/raw/?sort=Market+Capitalization&order=asc&query=${encodeURIComponent(presetConfig.query)}&limit=40`;
@@ -101,16 +155,16 @@ async function fetchFromScreenerIn(
   try {
     const resp = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; NSEBot/1.0)",
-        Accept: "application/json",
-        "X-Requested-With": "XMLHttpRequest",
+        'User-Agent': 'Mozilla/5.0 (compatible; NSEBot/1.0)',
+        Accept: 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
       },
       signal: AbortSignal.timeout(8000),
     });
 
     if (!resp.ok) throw new Error(`screener.in returned ${resp.status}`);
     const json = (await resp.json()) as { columns?: string[]; results?: unknown[][] };
-    if (!json.columns || !json.results) throw new Error("Unexpected screener.in format");
+    if (!json.columns || !json.results) throw new Error('Unexpected screener.in format');
 
     const cols = json.columns;
     const nameIdx = cols.findIndex((c) => /name|company/i.test(c));
@@ -122,7 +176,7 @@ async function fetchFromScreenerIn(
     const profitGrowthIdx = cols.findIndex((c) => /profit.*5|5.*profit/i.test(c));
 
     const rows = json.results.map((row: unknown[]) => ({
-      rawName: String(row[nameIdx] ?? ""),
+      rawName: String(row[nameIdx] ?? ''),
       currentPrice: Number(row[priceIdx] ?? 0),
       marketCap: Number(row[capIdx] ?? 0),
       pe: peIdx >= 0 ? Number(row[peIdx] ?? null) || null : null,
@@ -137,8 +191,8 @@ async function fetchFromScreenerIn(
   }
 }
 
-router.get("/market/screener", async (req, res) => {
-  const preset = (req.query.preset as string) ?? "multibagger";
+router.get('/market/screener', async (req, res) => {
+  const preset = (req.query.preset as string) ?? 'multibagger';
   const presetConfig = SCREENER_PRESETS[preset] ?? SCREENER_PRESETS.multibagger;
 
   try {
@@ -146,54 +200,67 @@ router.get("/market/screener", async (req, res) => {
 
     const symbolList = fromLive
       ? liveRows.slice(0, 20).map((r) => {
-          const name = (r.rawName as string).toUpperCase().replace(/\s+/g, "");
+          const name = (r.rawName as string).toUpperCase().replace(/\s+/g, '');
           return `${name}.NS`;
         })
       : presetConfig.symbols;
 
-    const stocks = (await Promise.all(
-      symbolList.map(async (sym, i) => {
-        try {
-          const q = await yahooFinance.quote(sym);
-          const price = q.regularMarketPrice ?? 0;
-          if (!price) return null;
+    const stocks = (
+      await Promise.all(
+        symbolList.map(async (sym, i) => {
+          try {
+            const q = await yahooFinance.quote(sym);
+            const price = q.regularMarketPrice ?? 0;
+            if (!price) return null;
 
-          const liveRow = fromLive ? (liveRows[i] ?? null) : null;
-          const mcapCr = (q.marketCap ?? 0) / 1e7;
-          const rawSym = sym.replace(".NS", "").replace(".BO", "");
+            const liveRow = fromLive ? (liveRows[i] ?? null) : null;
+            const mcapCr = (q.marketCap ?? 0) / 1e7;
+            const rawSym = sym.replace('.NS', '').replace('.BO', '');
 
-          const pe: number | null = liveRow?.pe != null ? (liveRow.pe as number) : (q.trailingPE ?? null);
-          const eps: number | null = q.epsTrailingTwelveMonths ?? null;
-          const roe: number | null = liveRow?.roe != null ? (liveRow.roe as number) : null;
-          const salesGrowth5yr: number | null = liveRow?.salesGrowth5yr != null ? (liveRow.salesGrowth5yr as number) : null;
-          const profitGrowth5yr: number | null = liveRow?.profitGrowth5yr != null ? (liveRow.profitGrowth5yr as number) : null;
+            const pe: number | null =
+              liveRow?.pe != null ? (liveRow.pe as number) : (q.trailingPE ?? null);
+            const eps: number | null = q.epsTrailingTwelveMonths ?? null;
+            const roe: number | null = liveRow?.roe != null ? (liveRow.roe as number) : null;
+            const salesGrowth5yr: number | null =
+              liveRow?.salesGrowth5yr != null ? (liveRow.salesGrowth5yr as number) : null;
+            const profitGrowth5yr: number | null =
+              liveRow?.profitGrowth5yr != null ? (liveRow.profitGrowth5yr as number) : null;
 
-          const score = calcMultibaggerScore({
-            pe, eps, roe, salesGrowth5yr, profitGrowth5yr,
-            changePercent: q.regularMarketChangePercent ?? 0,
-            marketCap: mcapCr,
-          });
+            const score = calcMultibaggerScore({
+              pe,
+              eps,
+              roe,
+              salesGrowth5yr,
+              profitGrowth5yr,
+              changePercent: q.regularMarketChangePercent ?? 0,
+              marketCap: mcapCr,
+            });
 
-          return {
-            symbol: rawSym,
-            name: (q.longName ?? q.shortName ?? rawSym) as string,
-            currentPrice: price,
-            marketCap: mcapCr,
-            pe, eps, roe, salesGrowth5yr, profitGrowth5yr,
-            weekHigh52: q.fiftyTwoWeekHigh ?? null,
-            weekLow52: q.fiftyTwoWeekLow ?? null,
-            change: q.regularMarketChange ?? 0,
-            changePercent: q.regularMarketChangePercent ?? 0,
-            multibaggerScore: score,
-            rsi: null,
-            screenerUrl: `https://www.screener.in/company/${rawSym}/`,
-            dataSource: fromLive ? "screener.in + Yahoo Finance" : "Yahoo Finance",
-          } as ScreenerStock;
-        } catch {
-          return null;
-        }
-      })
-    )).filter(Boolean) as ScreenerStock[];
+            return {
+              symbol: rawSym,
+              name: (q.longName ?? q.shortName ?? rawSym) as string,
+              currentPrice: price,
+              marketCap: mcapCr,
+              pe,
+              eps,
+              roe,
+              salesGrowth5yr,
+              profitGrowth5yr,
+              weekHigh52: q.fiftyTwoWeekHigh ?? null,
+              weekLow52: q.fiftyTwoWeekLow ?? null,
+              change: q.regularMarketChange ?? 0,
+              changePercent: q.regularMarketChangePercent ?? 0,
+              multibaggerScore: score,
+              rsi: null,
+              screenerUrl: `https://www.screener.in/company/${rawSym}/`,
+              dataSource: fromLive ? 'screener.in + Yahoo Finance' : 'Yahoo Finance',
+            } as ScreenerStock;
+          } catch {
+            return null;
+          }
+        }),
+      )
+    ).filter(Boolean) as ScreenerStock[];
 
     stocks.sort((a, b) => b.multibaggerScore - a.multibaggerScore);
 
@@ -205,30 +272,34 @@ router.get("/market/screener", async (req, res) => {
       totalFound: stocks.length,
     });
   } catch (err) {
-    req.log.error({ err }, "Screener fetch failed");
-    res.status(500).json({ error: "Failed to fetch screener data" });
+    req.log.error({ err }, 'Screener fetch failed');
+    res.status(500).json({ error: 'Failed to fetch screener data' });
   }
 });
 
-router.post("/market/screener/analyze", async (req, res) => {
-  const { symbols = [], preset = "multibagger" } = req.body as {
+router.post('/market/screener/analyze', async (req, res) => {
+  const { symbols = [], preset = 'multibagger' } = req.body as {
     symbols: string[];
     preset?: string;
   };
 
   if (!symbols.length) {
-    res.status(400).json({ error: "symbols array required" });
+    res.status(400).json({ error: 'symbols array required' });
     return;
   }
 
   try {
     const techResults = await Promise.allSettled(
       symbols.slice(0, 5).map(async (sym) => {
-        const ticker = sym.includes(".") ? sym : `${sym}.NS`;
+        const ticker = sym.includes('.') ? sym : `${sym}.NS`;
         try {
           const tech = await computeTechnicals(ticker);
           let q: Awaited<ReturnType<typeof yahooFinance.quote>> | null = null;
-          try { q = await yahooFinance.quote(ticker); } catch { /* skip */ }
+          try {
+            q = await yahooFinance.quote(ticker);
+          } catch {
+            /* skip */
+          }
 
           const price = q?.regularMarketPrice ?? 0;
           const sma50 = tech.sma50 ?? 0;
@@ -240,28 +311,41 @@ router.post("/market/screener/analyze", async (req, res) => {
             pe: q?.trailingPE ?? null,
             rsi: tech.rsi,
             macd: tech.macd,
-            trend: sma50 > 0 && price > sma50 ? "ABOVE SMA50" : "BELOW SMA50",
+            trend: sma50 > 0 && price > sma50 ? 'ABOVE SMA50' : 'BELOW SMA50',
           };
         } catch {
-          return { symbol: sym, name: sym, price: 0, marketCap: 0, pe: null, rsi: null, macd: null, trend: "N/A" };
+          return {
+            symbol: sym,
+            name: sym,
+            price: 0,
+            marketCap: 0,
+            pe: null,
+            rsi: null,
+            macd: null,
+            trend: 'N/A',
+          };
         }
-      })
+      }),
     );
 
     const techData = techResults
-      .filter((r) => r.status === "fulfilled")
+      .filter((r) => r.status === 'fulfilled')
       .map((r) => (r as PromiseFulfilledResult<any>).value);
 
     const prompt = `You are an expert Indian stock market analyst specializing in identifying multibagger stocks — small-cap and mid-cap companies that can deliver 5-10x returns over 2-3 years.
 
 Analyse these ${preset} screener candidates using technical + fundamental data:
 
-${techData.map((s) => `
+${techData
+  .map(
+    (s) => `
 Symbol: ${s.symbol} | Name: ${s.name}
-Price: ₹${s.price} | Market Cap: ₹${s.marketCap.toFixed(0)}Cr | PE: ${s.pe ?? "N/A"}
-RSI(14): ${s.rsi ?? "N/A"} | MACD: ${s.macd ? `${s.macd.macd.toFixed(2)} vs Signal ${s.macd.signal.toFixed(2)}` : "N/A"}
+Price: ₹${s.price} | Market Cap: ₹${s.marketCap.toFixed(0)}Cr | PE: ${s.pe ?? 'N/A'}
+RSI(14): ${s.rsi ?? 'N/A'} | MACD: ${s.macd ? `${s.macd.macd.toFixed(2)} vs Signal ${s.macd.signal.toFixed(2)}` : 'N/A'}
 Trend: ${s.trend}
-`).join("\n")}
+`,
+  )
+  .join('\n')}
 
 For each stock provide a multibagger analysis. Return ONLY this JSON (no markdown):
 {
@@ -282,10 +366,16 @@ For each stock provide a multibagger analysis. Return ONLY this JSON (no markdow
   "summary": "Overall 2-3 sentence market summary of these multibagger candidates"
 }`;
 
-    const result = await callWithFallback([
-      { role: "system", content: "You are an expert Indian stock market analyst. Return only valid JSON." },
-      { role: "user", content: prompt },
-    ], { maxTokens: 2000 });
+    const result = await callWithFallback(
+      [
+        {
+          role: 'system',
+          content: 'You are an expert Indian stock market analyst. Return only valid JSON.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { maxTokens: 2000 },
+    );
 
     const parsed = extractFirstJSON(result.content) as {
       analyses: Array<{
@@ -305,12 +395,12 @@ For each stock provide a multibagger analysis. Return ONLY this JSON (no markdow
 
     res.json({
       analyses: parsed.analyses ?? [],
-      summary: parsed.summary ?? "Analysis complete.",
+      summary: parsed.summary ?? 'Analysis complete.',
       generatedAt: new Date().toISOString(),
     });
   } catch (err) {
-    req.log.error({ err }, "Screener AI analysis failed");
-    res.status(500).json({ error: "AI analysis failed" });
+    req.log.error({ err }, 'Screener AI analysis failed');
+    res.status(500).json({ error: 'AI analysis failed' });
   }
 });
 

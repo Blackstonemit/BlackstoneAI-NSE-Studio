@@ -1,31 +1,31 @@
-import { Router, type IRouter } from "express";
-import { db } from "@workspace/db";
-import { signals } from "@workspace/db";
-import { computeTechnicals } from "./analysis";
-import { callWithFallback } from "../lib/multi-ai";
-import { extractFirstJSON } from "../lib/json-extract";
+import { Router, type IRouter } from 'express';
+import { db } from '@workspace/db';
+import { signals } from '@workspace/db';
+import { computeTechnicals } from './analysis';
+import { callWithFallback } from '../lib/multi-ai';
+import { extractFirstJSON } from '../lib/json-extract';
 
 const router: IRouter = Router();
 
 const STYLE_PROMPT: Record<string, string> = {
   conservative:
-    "Prefer high-confidence, well-confirmed signals only. Use tight stop-losses and conservative targets. Require multiple indicator alignment before generating a signal. If confidence is below 65%, do not include the signal.",
+    'Prefer high-confidence, well-confirmed signals only. Use tight stop-losses and conservative targets. Require multiple indicator alignment before generating a signal. If confidence is below 65%, do not include the signal.',
   moderate:
-    "Balance risk and reward. Include signals that have moderate confirmation. Standard stop-loss and target levels. Include signals with confidence above 50%.",
+    'Balance risk and reward. Include signals that have moderate confirmation. Standard stop-loss and target levels. Include signals with confidence above 50%.',
   aggressive:
-    "Include all noteworthy signals even if early or less confirmed. Wider targets, higher risk tolerance. Active traders want more signals. Include signals with confidence above 35%.",
+    'Include all noteworthy signals even if early or less confirmed. Wider targets, higher risk tolerance. Active traders want more signals. Include signals with confidence above 35%.',
 };
 
-router.post("/openai/agent/analyze", async (req, res) => {
+router.post('/openai/agent/analyze', async (req, res) => {
   try {
     const {
       symbol,
-      instrumentType = "STOCK",
-      timeframe = "INTRADAY",
+      instrumentType = 'STOCK',
+      timeframe = 'INTRADAY',
       numSignals = 2,
       maxTokens = 2048,
-      style = "moderate",
-      customContext = "",
+      style = 'moderate',
+      customContext = '',
       confidenceThreshold = 0,
       saveSignals: doSaveSignals = true,
     } = req.body as {
@@ -41,36 +41,38 @@ router.post("/openai/agent/analyze", async (req, res) => {
     };
 
     if (!symbol) {
-      res.status(400).json({ error: "symbol is required" });
+      res.status(400).json({ error: 'symbol is required' });
       return;
     }
 
     const clampedNumSignals = Math.min(5, Math.max(1, Number(numSignals) || 2));
     const clampedTokens = Math.min(4096, Math.max(512, Number(maxTokens) || 2048));
     const clampedThreshold = Math.min(90, Math.max(0, Number(confidenceThreshold) || 0));
-    const styleKey = ["conservative", "moderate", "aggressive"].includes(style) ? style : "moderate";
+    const styleKey = ['conservative', 'moderate', 'aggressive'].includes(style)
+      ? style
+      : 'moderate';
 
     let techData: any = null;
     try {
       techData = await computeTechnicals(symbol.toUpperCase());
     } catch (err) {
-      req.log.warn({ err, symbol }, "Could not fetch technical data");
+      req.log.warn({ err, symbol }, 'Could not fetch technical data');
     }
 
     const techContext = techData
       ? `Technical Indicators for ${symbol}:
-- RSI (14): ${techData.rsi ?? "N/A"}
-- MACD: ${techData.macd ? `${techData.macd.macd.toFixed(2)} | Signal: ${techData.macd.signal.toFixed(2)} | Histogram: ${techData.macd.histogram.toFixed(2)}` : "N/A"}
-- Bollinger Bands: ${techData.bollingerBands ? `Upper: ${techData.bollingerBands.upper} | Middle: ${techData.bollingerBands.middle} | Lower: ${techData.bollingerBands.lower}` : "N/A"}
-- SMA 20/50/200: ${techData.sma20 ?? "N/A"} / ${techData.sma50 ?? "N/A"} / ${techData.sma200 ?? "N/A"}
-- EMA 9/21: ${techData.ema9 ?? "N/A"} / ${techData.ema21 ?? "N/A"}
-- ATR (14): ${techData.atr ?? "N/A"}
-- Stochastic K/D: ${techData.stochastic ? `${techData.stochastic.k} / ${techData.stochastic.d}` : "N/A"}
-- ADX (14): ${techData.adx != null ? `${techData.adx} (${techData.adx >= 25 ? "TRENDING" : "RANGING"})` : "N/A"}
-- OBV: ${techData.obv != null ? techData.obv.toLocaleString() : "N/A"}
-- VWAP: ${techData.vwap ?? "N/A"}
-- SuperTrend (7,3): ${techData.superTrend ? `${techData.superTrend.direction} @ ${techData.superTrend.value}` : "N/A"}
-- Fibonacci (50-bar): ${techData.fibonacci ? `High: ${techData.fibonacci.high} | 78.6%: ${techData.fibonacci.r786} | 61.8%: ${techData.fibonacci.r618} | 50%: ${techData.fibonacci.r500} | 38.2%: ${techData.fibonacci.r382} | Low: ${techData.fibonacci.low}` : "N/A"}
+- RSI (14): ${techData.rsi ?? 'N/A'}
+- MACD: ${techData.macd ? `${techData.macd.macd.toFixed(2)} | Signal: ${techData.macd.signal.toFixed(2)} | Histogram: ${techData.macd.histogram.toFixed(2)}` : 'N/A'}
+- Bollinger Bands: ${techData.bollingerBands ? `Upper: ${techData.bollingerBands.upper} | Middle: ${techData.bollingerBands.middle} | Lower: ${techData.bollingerBands.lower}` : 'N/A'}
+- SMA 20/50/200: ${techData.sma20 ?? 'N/A'} / ${techData.sma50 ?? 'N/A'} / ${techData.sma200 ?? 'N/A'}
+- EMA 9/21: ${techData.ema9 ?? 'N/A'} / ${techData.ema21 ?? 'N/A'}
+- ATR (14): ${techData.atr ?? 'N/A'}
+- Stochastic K/D: ${techData.stochastic ? `${techData.stochastic.k} / ${techData.stochastic.d}` : 'N/A'}
+- ADX (14): ${techData.adx != null ? `${techData.adx} (${techData.adx >= 25 ? 'TRENDING' : 'RANGING'})` : 'N/A'}
+- OBV: ${techData.obv != null ? techData.obv.toLocaleString() : 'N/A'}
+- VWAP: ${techData.vwap ?? 'N/A'}
+- SuperTrend (7,3): ${techData.superTrend ? `${techData.superTrend.direction} @ ${techData.superTrend.value}` : 'N/A'}
+- Fibonacci (50-bar): ${techData.fibonacci ? `High: ${techData.fibonacci.high} | 78.6%: ${techData.fibonacci.r786} | 61.8%: ${techData.fibonacci.r618} | 50%: ${techData.fibonacci.r500} | 38.2%: ${techData.fibonacci.r382} | Low: ${techData.fibonacci.low}` : 'N/A'}
 - Computed Trend: ${techData.trend}
 - Overall Signal: ${techData.overallSignal} (Strength: ${techData.signalStrength}%)`
       : `No technical data available for ${symbol}.`;
@@ -85,7 +87,7 @@ IMPORTANT: Respond ONLY with valid JSON. No markdown fences, no explanations out
 
     const customSection = customContext?.trim()
       ? `\n\nAdditional context from the user:\n${customContext.trim()}`
-      : "";
+      : '';
 
     const userPrompt = `Perform a comprehensive technical analysis for ${symbol} (${instrumentType}) with ${timeframe} timeframe.
 
@@ -119,24 +121,22 @@ If ${instrumentType} is OPTIONS, suggest specific strike prices and expiries. On
 
     const { content, provider: usedProvider } = await callWithFallback(
       [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
       ],
-      { maxTokens: clampedTokens }
+      { maxTokens: clampedTokens },
     );
 
     let analysisResult: any;
     try {
       analysisResult = extractFirstJSON(content);
     } catch {
-      res.status(500).json({ error: "AI returned invalid response" });
+      res.status(500).json({ error: 'AI returned invalid response' });
       return;
     }
 
     const rawSignals: any[] = analysisResult.signals ?? [];
-    const filteredSignals = rawSignals.filter(
-      (s) => (s.confidence ?? 0) >= clampedThreshold
-    );
+    const filteredSignals = rawSignals.filter((s) => (s.confidence ?? 0) >= clampedThreshold);
 
     const savedSignals = [];
     if (doSaveSignals) {
@@ -144,17 +144,17 @@ If ${instrumentType} is OPTIONS, suggest specific strike prices and expiries. On
       const istOffsetMs = 5.5 * 60 * 60 * 1000;
       const nowIST = new Date(now.getTime() + istOffsetMs);
       let expiresAt: Date;
-      if (timeframe === "INTRADAY") {
-        expiresAt = new Date(Date.UTC(
-          nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate(), 10, 0, 0, 0
-        ));
+      if (timeframe === 'INTRADAY') {
+        expiresAt = new Date(
+          Date.UTC(nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate(), 10, 0, 0, 0),
+        );
         if (expiresAt <= now) {
           expiresAt = new Date(expiresAt.getTime() + 24 * 60 * 60 * 1000);
           const day = expiresAt.getUTCDay();
           if (day === 6) expiresAt = new Date(expiresAt.getTime() + 2 * 24 * 60 * 60 * 1000);
           else if (day === 0) expiresAt = new Date(expiresAt.getTime() + 1 * 24 * 60 * 60 * 1000);
         }
-      } else if (timeframe === "SWING") {
+      } else if (timeframe === 'SWING') {
         expiresAt = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
       } else {
         expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -173,8 +173,8 @@ If ${instrumentType} is OPTIONS, suggest specific strike prices and expiries. On
               targetPrice: sig.targetPrice ?? null,
               stopLoss: sig.stopLoss ?? null,
               confidence: Math.min(100, Math.max(0, sig.confidence ?? 50)),
-              rationale: sig.rationale || "",
-              status: "ACTIVE",
+              rationale: sig.rationale || '',
+              status: 'ACTIVE',
               timeframe,
               expiresAt,
             })
@@ -193,13 +193,15 @@ If ${instrumentType} is OPTIONS, suggest specific strike prices and expiries. On
 
     res.json({
       symbol: symbol.toUpperCase(),
-      summary: analysisResult.summary ?? "",
+      summary: analysisResult.summary ?? '',
       keyLevels: analysisResult.keyLevels ?? { support: [], resistance: [] },
-      signals: doSaveSignals ? savedSignals : filteredSignals.map((s) => ({
-        ...s,
-        confidence: Math.min(100, Math.max(0, s.confidence ?? 50)),
-      })),
-      riskAssessment: analysisResult.riskAssessment ?? "",
+      signals: doSaveSignals
+        ? savedSignals
+        : filteredSignals.map((s) => ({
+            ...s,
+            confidence: Math.min(100, Math.max(0, s.confidence ?? 50)),
+          })),
+      riskAssessment: analysisResult.riskAssessment ?? '',
       generatedAt: new Date().toISOString(),
       meta: {
         style: styleKey,
@@ -214,8 +216,8 @@ If ${instrumentType} is OPTIONS, suggest specific strike prices and expiries. On
       },
     });
   } catch (err) {
-    req.log.error({ err }, "Failed to run agent analysis");
-    res.status(500).json({ error: "Failed to run agent analysis" });
+    req.log.error({ err }, 'Failed to run agent analysis');
+    res.status(500).json({ error: 'Failed to run agent analysis' });
   }
 });
 

@@ -1,6 +1,19 @@
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"] as const;
+const MONTHS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+] as const;
 
 export function toIST(date: Date): Date {
   return new Date(date.getTime() + IST_OFFSET_MS);
@@ -33,24 +46,24 @@ export function getRefreshIntervalSecs(): number {
 /** HH:MM:SS IST */
 export function formatISTTime(date: Date): string {
   const ist = toIST(date);
-  const h = ist.getUTCHours().toString().padStart(2, "0");
-  const m = ist.getUTCMinutes().toString().padStart(2, "0");
-  const s = ist.getUTCSeconds().toString().padStart(2, "0");
+  const h = ist.getUTCHours().toString().padStart(2, '0');
+  const m = ist.getUTCMinutes().toString().padStart(2, '0');
+  const s = ist.getUTCSeconds().toString().padStart(2, '0');
   return `${h}:${m}:${s}`;
 }
 
 /** HH:MM IST */
 export function formatISTTimeHHMM(date: Date): string {
   const ist = toIST(date);
-  const h = ist.getUTCHours().toString().padStart(2, "0");
-  const m = ist.getUTCMinutes().toString().padStart(2, "0");
+  const h = ist.getUTCHours().toString().padStart(2, '0');
+  const m = ist.getUTCMinutes().toString().padStart(2, '0');
   return `${h}:${m}`;
 }
 
 /** DD MMM YYYY IST (e.g. "07 Jun 2026") */
 export function formatISTDate(date: Date): string {
   const ist = toIST(date);
-  const d = ist.getUTCDate().toString().padStart(2, "0");
+  const d = ist.getUTCDate().toString().padStart(2, '0');
   const mon = MONTHS[ist.getUTCMonth()];
   const y = ist.getUTCFullYear();
   return `${d} ${mon} ${y}`;
@@ -59,7 +72,7 @@ export function formatISTDate(date: Date): string {
 /** DD MMM IST — no year (e.g. "07 Jun") */
 export function formatISTShortDate(date: Date): string {
   const ist = toIST(date);
-  const d = ist.getUTCDate().toString().padStart(2, "0");
+  const d = ist.getUTCDate().toString().padStart(2, '0');
   const mon = MONTHS[ist.getUTCMonth()];
   return `${d} ${mon}`;
 }

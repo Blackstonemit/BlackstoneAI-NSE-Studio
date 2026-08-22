@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+coverage
+.cache
+.replit-artifact
+lib/api-client-react/src/generated
+lib/api-zod/src/generated
+artifacts/**/src/.generated
+artifacts/*/public
+*.min.js
+*.map

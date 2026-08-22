@@ -43,20 +43,20 @@ An agentic AI application for professional technical analysis of Indian stock ex
 
 ## API Routes
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/market/quotes` | Live quotes for symbol list |
-| GET | `/api/market/indices` | Major Indian indices |
-| GET | `/api/market/options-chain` | Options chain for a symbol |
-| GET | `/api/market/futures` | Futures data |
-| GET | `/api/market/history` | OHLCV historical data |
-| GET | `/api/market/movers` | Top gainers, losers, most active |
-| GET | `/api/analysis/technical` | Technical indicators for a symbol |
-| GET | `/api/analysis/summary` | Market-wide analysis summary |
-| GET | `/api/signals` | All trading signals (filterable) |
-| POST | `/api/signals/generate` | AI-generate new signals |
-| GET/POST/DELETE | `/api/watchlist` | Watchlist management |
-| POST | `/api/openai/agent/analyze` | Full AI agent analysis report |
+| Method          | Path                        | Description                       |
+| --------------- | --------------------------- | --------------------------------- |
+| GET             | `/api/market/quotes`        | Live quotes for symbol list       |
+| GET             | `/api/market/indices`       | Major Indian indices              |
+| GET             | `/api/market/options-chain` | Options chain for a symbol        |
+| GET             | `/api/market/futures`       | Futures data                      |
+| GET             | `/api/market/history`       | OHLCV historical data             |
+| GET             | `/api/market/movers`        | Top gainers, losers, most active  |
+| GET             | `/api/analysis/technical`   | Technical indicators for a symbol |
+| GET             | `/api/analysis/summary`     | Market-wide analysis summary      |
+| GET             | `/api/signals`              | All trading signals (filterable)  |
+| POST            | `/api/signals/generate`     | AI-generate new signals           |
+| GET/POST/DELETE | `/api/watchlist`            | Watchlist management              |
+| POST            | `/api/openai/agent/analyze` | Full AI agent analysis report     |
 
 ## Key Commands
 
