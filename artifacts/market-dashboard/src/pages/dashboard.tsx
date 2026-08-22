@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { TradeButtons } from '@/components/trade-buttons';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -219,48 +220,74 @@ function PinnedTile({
 }) {
   const up = (quote?.changePercent ?? 0) >= 0;
   return (
-    <Card className="rounded-sm border-border bg-card relative group">
-      <button
-        onClick={onRemove}
-        className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-        title="Remove"
-      >
-        <X className="h-3.5 w-3.5" />
-      </button>
-      <CardContent className="p-4 flex flex-col justify-between h-full">
-        {quote ? (
-          <>
-            <div className="text-sm font-medium text-muted-foreground truncate pr-5">
-              {quote.name || quote.symbol}
-            </div>
-            <div className="flex items-baseline justify-between mt-2">
-              <div className="text-xl font-bold font-mono">{quote.price.toFixed(2)}</div>
-              <div
-                className={cn(
-                  'flex items-center text-sm font-mono',
-                  up ? 'text-success' : 'text-destructive',
-                )}
-              >
-                {up ? (
-                  <ArrowUpIcon className="h-3 w-3 mr-1" />
-                ) : (
-                  <ArrowDownIcon className="h-3 w-3 mr-1" />
-                )}
-                {Math.abs(quote.changePercent).toFixed(2)}%
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -8, scale: 0.98 }}
+      transition={{ duration: 0.25 }}
+    >
+      <Card className="rounded-sm border-border bg-card relative group dashboard-card">
+        <button
+          onClick={onRemove}
+          className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+          title="Remove"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+        <CardContent className="p-4 flex flex-col justify-between h-full">
+          {quote ? (
+            <>
+              <div className="text-sm font-medium text-muted-foreground truncate pr-5">
+                {quote.name || quote.symbol}
               </div>
-            </div>
-            <div className="text-[10px] font-mono text-muted-foreground/60 mt-1">
-              O:{quote.open.toFixed(0)} H:{quote.high.toFixed(0)} L:{quote.low.toFixed(0)}
-            </div>
-          </>
-        ) : (
-          <>
-            <Skeleton className="h-3 w-20 mb-3" />
-            <Skeleton className="h-6 w-28" />
-          </>
-        )}
-      </CardContent>
-    </Card>
+              <div className="flex items-baseline justify-between mt-2">
+                <div className="text-xl font-bold font-mono">{quote.price.toFixed(2)}</div>
+                <div
+                  className={cn(
+                    'flex items-center text-sm font-mono',
+                    up ? 'text-success' : 'text-destructive',
+                  )}
+                >
+                  {up ? (
+                    <ArrowUpIcon className="h-3 w-3 mr-1" />
+                  ) : (
+                    <ArrowDownIcon className="h-3 w-3 mr-1" />
+                  )}
+                  {Math.abs(quote.changePercent).toFixed(2)}%
+                </div>
+              </div>
+              <div className="text-[10px] font-mono text-muted-foreground/60 mt-1">
+                O:{quote.open.toFixed(0)} H:{quote.high.toFixed(0)} L:{quote.low.toFixed(0)}
+              </div>
+            </>
+          ) : (
+            <>
+              <Skeleton className="h-3 w-20 mb-3" />
+              <Skeleton className="h-6 w-28" />
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+function MiniSparkline({ positive }: { positive: boolean }) {
+  const points = positive
+    ? '0,26 12,22 24,24 36,16 48,18 60,9 72,12 84,4'
+    : '0,7 12,12 24,9 36,17 48,14 60,22 72,18 84,27';
+  const stroke = positive ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
+  return (
+    <svg
+      viewBox="0 0 84 32"
+      className="h-8 w-[84px] opacity-80"
+      role="img"
+      aria-label={positive ? 'Upward price trend' : 'Downward price trend'}
+    >
+      <polyline points={points} fill="none" stroke={stroke} strokeWidth="1.5" />
+      <circle cx="84" cy={positive ? 4 : 27} r="2" fill={stroke} className="sparkline-dot" />
+    </svg>
   );
 }
 
@@ -339,9 +366,24 @@ export default function Dashboard() {
   });
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      className="dashboard-shell relative space-y-6"
+      initial="hidden"
+      animate="show"
+      variants={{
+        hidden: {},
+        show: { transition: { staggerChildren: 0.06 } },
+      }}
+    >
+      <div className="dashboard-grid-glow" aria-hidden="true" />
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <motion.div
+        className="flex items-center justify-between"
+        variants={{
+          hidden: { opacity: 0, y: -8 },
+          show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
+        }}
+      >
         <h1 className="text-2xl font-bold tracking-tight font-mono">LIVE DASHBOARD</h1>
         <LiveRefreshBar
           isMarketOpen={isMarketOpen}
@@ -350,7 +392,7 @@ export default function Dashboard() {
           countdown={countdown}
           onRefresh={refresh}
         />
-      </div>
+      </motion.div>
 
       {/* Indices + Pinned row */}
       <div className="space-y-2">
@@ -369,28 +411,43 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
               ))
-            : indices?.map((idx) => (
-                <Card key={idx.symbol} className="rounded-sm border-muted bg-card">
-                  <CardContent className="p-4 flex flex-col justify-between h-full">
-                    <div className="text-sm font-medium text-muted-foreground">{idx.name}</div>
-                    <div className="flex items-baseline justify-between mt-2">
-                      <div className="text-2xl font-bold font-mono">{idx.value.toFixed(2)}</div>
-                      <div
-                        className={cn(
-                          'flex items-center text-sm font-mono',
-                          idx.change >= 0 ? 'text-success' : 'text-destructive',
-                        )}
-                      >
-                        {idx.change >= 0 ? (
-                          <ArrowUpIcon className="h-3 w-3 mr-1" />
-                        ) : (
-                          <ArrowDownIcon className="h-3 w-3 mr-1" />
-                        )}
-                        {Math.abs(idx.changePercent).toFixed(2)}%
+            : indices?.map((idx, index) => (
+                <motion.div
+                  key={idx.symbol}
+                  variants={{
+                    hidden: { opacity: 0, y: 12 },
+                    show: {
+                      opacity: 1,
+                      y: 0,
+                      transition: { duration: 0.35, delay: index * 0.04 },
+                    },
+                  }}
+                >
+                  <Card className="rounded-sm border-muted bg-card dashboard-card">
+                    <CardContent className="p-4 flex flex-col justify-between h-full">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-sm font-medium text-muted-foreground">{idx.name}</div>
+                        <MiniSparkline positive={idx.change >= 0} />
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                      <div className="flex items-baseline justify-between mt-2">
+                        <div className="text-2xl font-bold font-mono">{idx.value.toFixed(2)}</div>
+                        <div
+                          className={cn(
+                            'flex items-center text-sm font-mono',
+                            idx.change >= 0 ? 'text-success' : 'text-destructive',
+                          )}
+                        >
+                          {idx.change >= 0 ? (
+                            <ArrowUpIcon className="h-3 w-3 mr-1" />
+                          ) : (
+                            <ArrowDownIcon className="h-3 w-3 mr-1" />
+                          )}
+                          {Math.abs(idx.changePercent).toFixed(2)}%
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))}
         </div>
 
@@ -458,16 +515,22 @@ export default function Dashboard() {
                   <span className="font-mono">{summary.totalSymbols}</span>
                 </div>
                 <div className="flex h-2 w-full rounded-full overflow-hidden">
-                  <div
-                    style={{ width: `${(summary.bullish / summary.totalSymbols) * 100}%` }}
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(summary.bullish / summary.totalSymbols) * 100}%` }}
+                    transition={{ duration: 0.8, ease: 'easeOut' }}
                     className="bg-success"
                   />
-                  <div
-                    style={{ width: `${(summary.neutral / summary.totalSymbols) * 100}%` }}
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(summary.neutral / summary.totalSymbols) * 100}%` }}
+                    transition={{ duration: 0.8, delay: 0.1, ease: 'easeOut' }}
                     className="bg-muted"
                   />
-                  <div
-                    style={{ width: `${(summary.bearish / summary.totalSymbols) * 100}%` }}
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(summary.bearish / summary.totalSymbols) * 100}%` }}
+                    transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
                     className="bg-destructive"
                   />
                 </div>
@@ -496,9 +559,12 @@ export default function Dashboard() {
             ) : movers ? (
               <div className="grid grid-cols-2 divide-x divide-muted">
                 <div className="p-2 space-y-1">
-                  {movers.gainers.slice(0, 5).map((g) => (
-                    <div
+                  {movers.gainers.slice(0, 5).map((g, index) => (
+                    <motion.div
                       key={g.symbol}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.25 }}
                       className="flex justify-between items-center p-2 hover:bg-muted/50 rounded-sm"
                     >
                       <span className="font-bold text-sm">{g.symbol}</span>
@@ -514,13 +580,16 @@ export default function Dashboard() {
                         </span>
                         <TradeButtons symbol={g.symbol} price={g.price} />
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
                 <div className="p-2 space-y-1">
-                  {movers.losers.slice(0, 5).map((l) => (
-                    <div
+                  {movers.losers.slice(0, 5).map((l, index) => (
+                    <motion.div
                       key={l.symbol}
+                      initial={{ opacity: 0, x: 8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.25 }}
                       className="flex justify-between items-center p-2 hover:bg-muted/50 rounded-sm"
                     >
                       <span className="font-bold text-sm">{l.symbol}</span>
@@ -530,7 +599,7 @@ export default function Dashboard() {
                         </span>
                         <TradeButtons symbol={l.symbol} price={l.price} />
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
@@ -554,9 +623,12 @@ export default function Dashboard() {
             </div>
           ) : signals && signals.length > 0 ? (
             <div className="divide-y divide-muted">
-              {signals.slice(0, 10).map((signal) => (
-                <div
+              {signals.slice(0, 10).map((signal, index) => (
+                <motion.div
                   key={signal.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05, duration: 0.25 }}
                   className="p-4 flex items-center justify-between hover:bg-muted/20"
                 >
                   <div className="flex items-center gap-4">
@@ -589,7 +661,7 @@ export default function Dashboard() {
                       SL: <span className="text-destructive">{signal.stopLoss ?? '—'}</span>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           ) : (
@@ -604,6 +676,6 @@ export default function Dashboard() {
       {showSearch && (
         <AddSymbolPopover pinned={pins} onAdd={addPin} onClose={() => setShowSearch(false)} />
       )}
-    </div>
+    </motion.div>
   );
 }
